@@ -3,310 +3,286 @@
 <head>
   <base target="_top">
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>👑 공주님 옷 입히기</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --pink: #ff6fae;
-      --pink-dark: #d6437f;
-      --pink-light: #ffe3f0;
-      --purple: #9b7bff;
-      --cream: #fff8fc;
-      --text: #5a2a4a;
-    }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
-    body {
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0; padding: 0; width: 100%; height: 100%;
+      overflow: hidden;
+      background: #2a0752;
       font-family: 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at 10% 10%, #fff 0 2px, transparent 3px) 0 0 / 40px 40px,
-        linear-gradient(160deg, #ffd6ea 0%, #e9dcff 55%, #d6ecff 100%);
-      min-height: 100vh;
+      user-select: none; -webkit-user-select: none;
     }
-    header {
-      text-align: center;
-      padding: 14px 12px 4px;
-    }
-    h1 {
-      margin: 0;
-      font-size: clamp(26px, 5vw, 40px);
-      color: #fff;
-      text-shadow: 0 3px 0 var(--pink-dark), 0 0 12px rgba(214, 67, 127, .5);
-      letter-spacing: 1px;
-    }
-    header p { margin: 4px 0 0; font-size: 16px; opacity: .8; }
-
-    .game {
-      display: flex;
-      gap: 18px;
-      max-width: 1040px;
-      margin: 10px auto 24px;
-      padding: 0 16px;
-      align-items: flex-start;
-    }
-
-    /* ---------- 무대 ---------- */
-    .stage-card {
-      flex: 0 0 380px;
-      background: #fff;
-      border-radius: 28px;
-      padding: 12px;
-      box-shadow: 0 10px 30px rgba(155, 80, 140, .25);
-      border: 4px solid #ffc2df;
-      position: sticky;
-      top: 10px;
-    }
-    .stage-wrap { position: relative; border-radius: 20px; overflow: hidden; }
-    #stage { display: block; width: 100%; height: auto; }
-    #stage.pop { animation: pop .35s ease; }
-    @keyframes pop {
-      0% { transform: scale(1); }
-      40% { transform: scale(1.025) translateY(-4px); }
-      100% { transform: scale(1); }
-    }
-    .sparkle {
+    #viewport { position: fixed; inset: 0; }
+    /* 게임 화면은 1160 x 830 크기로 그리고 창 크기에 맞게 확대/축소 */
+    #game {
       position: absolute;
+      width: 1160px; height: 830px;
+      transform-origin: 0 0;
+      border-radius: 26px;
+      overflow: hidden;
+      background:
+        repeating-conic-gradient(from 0deg at 210px 560px, rgba(255,255,255,.13) 0deg 6deg, rgba(255,255,255,0) 6deg 17deg),
+        radial-gradient(circle at 210px 560px, #ff8be6 0%, #d046dc 28%, #8a26c9 58%, #45107f 100%);
+      box-shadow: 0 0 0 5px #ff9fe0, 0 10px 40px rgba(0,0,0,.5);
+    }
+    #game::after {
+      content: ''; position: absolute; inset: 9px;
+      border: 3px dashed rgba(255,255,255,.55);
+      border-radius: 20px;
       pointer-events: none;
-      font-size: 22px;
-      animation: sparkle .9s ease-out forwards;
+      z-index: 5;
     }
-    @keyframes sparkle {
-      0% { opacity: 0; transform: scale(.2) rotate(0); }
-      30% { opacity: 1; transform: scale(1.2) rotate(40deg); }
-      100% { opacity: 0; transform: scale(.6) translateY(-30px) rotate(90deg); }
+    .castle { position: absolute; left: 0; bottom: 56px; width: 1160px; height: 170px; pointer-events: none; }
+    .twinkle {
+      position: absolute; color: #fff; pointer-events: none;
+      text-shadow: 0 0 8px #fff, 0 0 16px #ffb3f0;
+      animation: twinkle 2.4s ease-in-out infinite;
     }
-    .name-row {
-      display: flex; gap: 8px; align-items: center; margin-top: 10px;
+    @keyframes twinkle {
+      0%, 100% { opacity: .15; transform: scale(.6) rotate(0); }
+      50% { opacity: 1; transform: scale(1.1) rotate(45deg); }
     }
-    .name-row label { white-space: nowrap; }
-    .name-row input {
-      flex: 1; min-width: 0;
-      font-family: inherit; font-size: 17px; color: var(--text);
-      border: 3px solid #ffc2df; border-radius: 14px; padding: 6px 10px;
-      outline: none;
-    }
-    .name-row input:focus { border-color: var(--pink); }
 
-    .actions {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-top: 10px;
+    /* ---------- 공주님 ---------- */
+    #dollWrap {
+      position: absolute; left: 60px; top: 8px;
+      width: 300px; height: 760px;
+      transition: left .6s cubic-bezier(.5,1.4,.5,1);
+      z-index: 10;
     }
-    .btn {
-      font-family: inherit;
-      font-size: 16px;
-      border: none;
-      border-radius: 16px;
-      padding: 10px 6px;
-      cursor: pointer;
-      color: #fff;
-      background: var(--pink);
-      box-shadow: 0 4px 0 var(--pink-dark);
-      transition: transform .08s, box-shadow .08s;
+    .pedestal { position: absolute; left: -30px; top: 700px; width: 360px; height: 80px; }
+    #doll { position: absolute; left: 0; top: 0; width: 300px; height: 750px; touch-action: none; overflow: visible; }
+    #doll .worn { cursor: grab; }
+    #doll .eyes { animation: blink 5s infinite; transform-box: fill-box; transform-origin: center; }
+    @keyframes blink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.08); } }
+    #dollWrap.hover #doll { filter: drop-shadow(0 0 10px #fff) drop-shadow(0 0 22px #ffe45c); }
+    #dollWrap.hover .pedestal { filter: brightness(1.3); }
+    .burst {
+      position: absolute; pointer-events: none; font-size: 26px; z-index: 30;
+      animation: burst .9s ease-out forwards;
     }
-    .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--pink-dark); }
-    .btn.purple { background: var(--purple); box-shadow: 0 4px 0 #6b4fd1; }
-    .btn.purple:active { box-shadow: 0 1px 0 #6b4fd1; }
-    .btn.sky { background: #52b6f5; box-shadow: 0 4px 0 #2a86c4; }
-    .btn.sky:active { box-shadow: 0 1px 0 #2a86c4; }
-    .btn.gray { background: #b9a7b6; box-shadow: 0 4px 0 #8c7a89; }
+    @keyframes burst {
+      0% { opacity: 0; transform: translate(0,0) scale(.3); }
+      25% { opacity: 1; }
+      100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1.1) rotate(120deg); }
+    }
 
     /* ---------- 옷장 ---------- */
-    .closet {
-      flex: 1;
-      min-width: 0;
-      background: rgba(255, 255, 255, .85);
-      border-radius: 28px;
-      padding: 14px;
-      box-shadow: 0 10px 30px rgba(155, 80, 140, .2);
-      border: 4px solid #e2d4ff;
+    #rack {
+      position: absolute; left: 390px; top: 12px; width: 758px; height: 752px;
+      transition: opacity .4s;
+      z-index: 20;
     }
-    .tabs {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
-      gap: 8px;
-    }
+    #game.full #rack { opacity: 0; pointer-events: none; }
+    #game.full #dollWrap { left: 430px; }
+    #tabs { position: absolute; left: 10px; top: 4px; right: 10px; display: flex; gap: 8px; justify-content: center; }
     .tab {
-      font-family: inherit;
-      background: var(--cream);
-      border: 3px solid #f3d3e6;
-      border-radius: 16px;
-      padding: 6px 2px;
-      cursor: pointer;
-      color: var(--text);
-      font-size: 14px;
-      display: flex; flex-direction: column; align-items: center; gap: 2px;
-      transition: transform .1s;
-    }
-    .tab .emo { font-size: 24px; line-height: 1.1; }
-    .tab:hover { transform: translateY(-2px); }
-    .tab.active {
-      background: linear-gradient(180deg, #ff9cc9, #ff6fae);
-      border-color: var(--pink-dark);
-      color: #fff;
-    }
-    .panel-title {
-      margin: 16px 4px 8px;
-      font-size: 20px;
-    }
-    .items {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-      gap: 10px;
-    }
-    .item {
-      font-family: inherit;
-      background: #fff;
-      border: 3px solid #f0e2ee;
-      border-radius: 18px;
-      padding: 10px 4px 8px;
-      cursor: pointer;
-      color: var(--text);
-      font-size: 15px;
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
-      transition: transform .1s, border-color .1s;
-    }
-    .item .emo { font-size: 34px; line-height: 1.1; }
-    .item:hover { transform: translateY(-3px); border-color: #ffc2df; }
-    .item.selected {
-      border-color: var(--pink);
-      background: var(--pink-light);
-      box-shadow: 0 0 0 3px rgba(255, 111, 174, .25);
-    }
-    .colors {
-      display: flex; flex-wrap: wrap; gap: 10px;
-      padding: 4px;
-    }
-    .swatch {
-      width: 42px; height: 42px;
-      border-radius: 50%;
+      font-family: inherit; font-size: 18px;
+      padding: 6px 13px 5px; white-space: nowrap;
       border: 3px solid #fff;
-      box-shadow: 0 0 0 2px #e6cfe0, 0 3px 6px rgba(0, 0, 0, .12);
+      border-radius: 999px;
+      background: rgba(255,255,255,.25);
+      color: #fff;
       cursor: pointer;
-      transition: transform .1s;
+      text-shadow: 0 2px 0 rgba(90,0,110,.5);
+      transition: transform .12s, background .12s;
     }
-    .swatch:hover { transform: scale(1.1); }
-    .swatch.selected { box-shadow: 0 0 0 4px var(--pink), 0 3px 6px rgba(0, 0, 0, .15); transform: scale(1.1); }
+    .tab:hover { transform: translateY(-2px); background: rgba(255,255,255,.4); }
+    .tab.active {
+      background: linear-gradient(180deg, #fff 0%, #ffd6f2 100%);
+      color: #c2188a; text-shadow: none;
+      box-shadow: 0 4px 0 #b0187e;
+    }
+    #pieces { position: absolute; left: 0; top: 62px; width: 758px; height: 690px; }
+    .piece {
+      position: absolute;
+      cursor: grab;
+      touch-action: none;
+      filter: drop-shadow(0 5px 4px rgba(40,0,60,.35));
+      transition: left .45s cubic-bezier(.4,1.5,.5,1), top .45s cubic-bezier(.4,1.5,.5,1), transform .15s, opacity .3s;
+    }
+    .piece svg { width: 100%; height: 100%; display: block; overflow: visible; }
+    .piece:hover { transform: scale(1.06) rotate(-2deg); filter: drop-shadow(0 0 6px #fff) drop-shadow(0 6px 5px rgba(40,0,60,.35)); }
+    .piece.off { display: none; }
+    .piece.worn { visibility: hidden; }
+    .piece.flying { display: block !important; visibility: visible !important; }
+    .piece.dragging {
+      transition: none; cursor: grabbing; z-index: 1000;
+      transform: scale(1.1) rotate(-3deg);
+      filter: drop-shadow(0 0 8px #fff) drop-shadow(0 14px 10px rgba(40,0,60,.45));
+    }
+    .piece .tag {
+      position: absolute; left: 50%; bottom: -20px; transform: translateX(-50%);
+      white-space: nowrap; font-size: 14px; color: #fff;
+      background: rgba(120,20,140,.75); padding: 1px 8px; border-radius: 99px;
+      opacity: 0; transition: opacity .15s; pointer-events: none;
+    }
+    .piece:hover .tag { opacity: 1; }
+    .piece.dragging .tag { opacity: 0; }
+
+    #hairPanel { position: absolute; left: 20px; top: 70px; right: 20px; display: none; color: #fff; }
+    #hairPanel.show { display: block; }
+    #hairPanel h3 { margin: 6px 4px 10px; font-size: 22px; font-weight: normal; text-shadow: 0 2px 0 rgba(90,0,110,.5); }
+    .hair-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .hair-btn {
+      width: 124px; border: 4px solid rgba(255,255,255,.6); border-radius: 22px;
+      background: rgba(255,255,255,.85); cursor: pointer; padding: 4px 4px 2px;
+      font-family: inherit; font-size: 16px; color: #8a1f78;
+      transition: transform .12s;
+    }
+    .hair-btn:hover { transform: translateY(-3px); }
+    .hair-btn.active { border-color: #ffe45c; box-shadow: 0 0 0 3px #ff5fb8; }
+    .hair-btn svg { width: 100%; height: 130px; display: block; }
+    .sw-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+    .sw {
+      width: 48px; height: 48px; border-radius: 50%; cursor: pointer;
+      border: 4px solid #fff; box-shadow: 0 3px 6px rgba(0,0,0,.3);
+      transition: transform .12s;
+    }
+    .sw:hover { transform: scale(1.1); }
+    .sw.active { box-shadow: 0 0 0 4px #ff5fb8, 0 3px 6px rgba(0,0,0,.3); transform: scale(1.12); }
+
+    /* ---------- 아래 버튼 ---------- */
+    #toolbar {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 64px;
+      display: flex; align-items: center; gap: 10px;
+      padding: 0 24px;
+      z-index: 25;
+    }
+    .logo {
+      font-size: 30px; color: #fff; margin-right: auto;
+      text-shadow: 0 3px 0 #b0187e, 0 0 12px #ff7be0;
+      letter-spacing: 1px;
+    }
+    .cloud-btn {
+      font-family: inherit; font-size: 21px;
+      padding: 8px 20px 7px;
+      border: 4px solid #fff;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #fff3fb 0%, #ffb6e4 100%);
+      color: #c2188a;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #b0187e, 0 0 14px rgba(255,255,255,.6);
+      transition: transform .1s, box-shadow .1s;
+    }
+    .cloud-btn:hover { transform: translateY(-2px); }
+    .cloud-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #b0187e; }
+    .cloud-btn.blue { background: linear-gradient(180deg, #f3fbff 0%, #a9dcff 100%); color: #1a64b0; box-shadow: 0 4px 0 #2a6cb0, 0 0 14px rgba(255,255,255,.6); }
+    .cloud-btn.gold { background: linear-gradient(180deg, #fffbe8 0%, #ffe07a 100%); color: #a55d00; box-shadow: 0 4px 0 #c88a00, 0 0 14px rgba(255,255,255,.6); }
 
     /* ---------- 팝업 ---------- */
     .modal {
       position: fixed; inset: 0;
-      background: rgba(80, 30, 70, .45);
-      display: none;
-      align-items: center; justify-content: center;
-      padding: 16px;
-      z-index: 50;
+      background: rgba(40, 0, 60, .55);
+      display: none; align-items: center; justify-content: center;
+      padding: 16px; z-index: 100;
     }
     .modal.open { display: flex; }
     .modal-box {
-      background: #fff;
-      border-radius: 26px;
-      padding: 18px;
-      width: min(560px, 100%);
-      max-height: 92vh;
-      overflow: auto;
-      border: 4px solid #ffc2df;
-      text-align: center;
+      background: linear-gradient(180deg, #fff 0%, #ffeefa 100%);
+      border-radius: 28px; padding: 18px;
+      width: min(620px, 100%); max-height: 94vh; overflow: auto;
+      border: 5px solid #ff9fe0; text-align: center; color: #8a1f78;
     }
-    .modal-box h2 { margin: 0 0 12px; color: var(--pink-dark); }
-    .slots {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
+    .modal-box h2 { margin: 0 0 12px; font-weight: normal; font-size: 28px; }
+    .slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     .slot {
-      border: 3px dashed #f3c0dc;
-      border-radius: 18px;
-      padding: 8px;
-      display: flex; flex-direction: column; gap: 6px; align-items: stretch;
+      border: 3px dashed #f3a6d8; border-radius: 20px; padding: 8px;
+      display: flex; flex-direction: column; gap: 6px;
     }
     .slot .thumb {
-      aspect-ratio: 300 / 520;
-      border-radius: 12px;
-      overflow: hidden;
-      background: var(--pink-light);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 30px;
+      aspect-ratio: 360 / 900; max-height: 42vh; margin: 0 auto; width: 100%;
+      border-radius: 14px; overflow: hidden;
+      background: radial-gradient(circle at 50% 70%, #ff9be8, #9a34d0);
+      display: flex; align-items: center; justify-content: center; font-size: 36px;
     }
-    .slot .thumb svg { width: 100%; height: 100%; display: block; }
-    .slot .label { font-size: 14px; min-height: 1.2em; }
-    .slot .btn { font-size: 14px; padding: 7px 4px; }
-    #photoImg { max-width: 100%; max-height: 60vh; border-radius: 16px; }
-    .modal-actions { display: flex; gap: 8px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
-    .modal-actions .btn { padding: 10px 18px; text-decoration: none; }
-    .hint { font-size: 14px; opacity: .75; margin: 8px 0 0; }
+    .slot .thumb svg { width: 100%; height: 100%; }
+    .slot .cloud-btn { font-size: 16px; padding: 6px 6px 5px; border-width: 3px; }
+    #photoImg { max-width: 100%; max-height: 62vh; border-radius: 18px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+    .modal-actions .cloud-btn { text-decoration: none; }
+    .hint { font-size: 15px; opacity: .8; margin: 8px 0 0; }
 
     .toast {
-      position: fixed;
-      left: 50%; bottom: 24px;
-      transform: translateX(-50%) translateY(20px);
-      background: #fff;
-      color: var(--pink-dark);
-      border: 3px solid #ffc2df;
-      padding: 10px 18px;
-      border-radius: 999px;
-      font-size: 17px;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity .25s, transform .25s;
-      z-index: 60;
-      white-space: nowrap;
-      box-shadow: 0 6px 18px rgba(155, 80, 140, .25);
+      position: fixed; left: 50%; top: 18px;
+      transform: translateX(-50%) translateY(-20px);
+      background: #fff; color: #c2188a;
+      border: 4px solid #ff9fe0; padding: 8px 20px; border-radius: 999px;
+      font-size: 20px; opacity: 0; pointer-events: none; white-space: nowrap;
+      transition: opacity .25s, transform .25s; z-index: 200;
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-    @media (max-width: 760px) {
-      .game { flex-direction: column; align-items: stretch; }
-      .stage-card { flex: none; position: static; max-width: 420px; width: 100%; margin: 0 auto; }
-      .items { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
-    }
   </style>
 </head>
 <body>
-  <header>
-    <h1>👑 공주님 옷 입히기 👑</h1>
-    <p>옷장에서 마음에 드는 옷을 골라 공주님을 꾸며 주세요!</p>
-  </header>
+  <div id="viewport">
+    <div id="game">
+      <svg class="castle" viewBox="0 0 1160 170" preserveAspectRatio="none">
+        <g fill="rgba(45,5,85,.55)">
+          <path d="M0 170 V120 H40 V90 L60 60 L80 90 V120 H130 V100 H150 V120 H200 V170Z"/>
+          <path d="M380 170 V110 H400 V70 L420 30 L440 70 V110 H470 V130 H490 V170Z"/>
+          <path d="M620 170 V130 H660 V80 L690 20 L720 80 V130 H760 V100 L780 70 L800 100 V170Z"/>
+          <path d="M960 170 V120 H990 V80 L1010 45 L1030 80 V120 H1080 V95 L1100 65 L1120 95 V170Z"/>
+          <rect x="0" y="150" width="1160" height="20"/>
+        </g>
+        <g stroke="rgba(45,5,85,.55)" stroke-width="5">
+          <path d="M200 150 H380 M490 150 H620 M800 150 H960"/>
+          <path d="M210 150 V128 M230 150 V128 M250 150 V128 M270 150 V128 M290 150 V128 M310 150 V128 M330 150 V128 M350 150 V128 M370 150 V128
+                   M500 150 V128 M520 150 V128 M540 150 V128 M560 150 V128 M580 150 V128 M600 150 V128
+                   M810 150 V128 M830 150 V128 M850 150 V128 M870 150 V128 M890 150 V128 M910 150 V128 M930 150 V128 M950 150 V128"/>
+        </g>
+      </svg>
+      <div id="twinkles"></div>
 
-  <main class="game">
-    <section class="stage-card">
-      <div class="stage-wrap" id="stageWrap">
-        <svg id="stage" viewBox="0 0 300 520" xmlns="http://www.w3.org/2000/svg" aria-label="공주님"></svg>
+      <div id="dollWrap">
+        <svg class="pedestal" viewBox="0 0 360 80">
+          <defs>
+            <linearGradient id="pedTop" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#fff7b0"/><stop offset="1" stop-color="#ffc21a"/>
+            </linearGradient>
+            <linearGradient id="pedSide" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#d98a00"/><stop offset=".5" stop-color="#ffd84a"/><stop offset="1" stop-color="#d98a00"/>
+            </linearGradient>
+          </defs>
+          <path d="M30 34 V50 Q180 92 330 50 V34Z" fill="url(#pedSide)" stroke="#b86e00" stroke-width="2"/>
+          <ellipse cx="180" cy="34" rx="150" ry="26" fill="url(#pedTop)" stroke="#e0a000" stroke-width="3"/>
+          <ellipse cx="180" cy="34" rx="118" ry="17" fill="none" stroke="#fff" stroke-width="2" opacity=".7"/>
+          <g fill="#ff5fb8" stroke="#fff" stroke-width="1.5">
+            <circle cx="52" cy="54" r="5"/><circle cx="92" cy="64" r="5"/><circle cx="136" cy="70" r="5"/>
+            <circle cx="180" cy="72" r="5"/><circle cx="224" cy="70" r="5"/><circle cx="268" cy="64" r="5"/><circle cx="308" cy="54" r="5"/>
+          </g>
+        </svg>
+        <svg id="doll" viewBox="0 0 360 900" xmlns="http://www.w3.org/2000/svg"></svg>
       </div>
-      <div class="name-row">
-        <label for="nameInput">공주님 이름</label>
-        <input id="nameInput" maxlength="12" placeholder="예: 서영">
-      </div>
-      <div class="actions">
-        <button class="btn purple" id="randomBtn">🎲 랜덤</button>
-        <button class="btn gray" id="resetBtn">🔄 처음으로</button>
-        <button class="btn sky" id="photoBtn">📸 사진</button>
-        <button class="btn" id="saveBtn" style="grid-column: span 3">💾 저장하기 / 📂 불러오기</button>
-      </div>
-    </section>
 
-    <section class="closet">
-      <div class="tabs" id="tabs"></div>
-      <h2 class="panel-title" id="panelTitle"></h2>
-      <div class="items" id="items"></div>
-      <h2 class="panel-title" id="colorTitle">🎨 색깔</h2>
-      <div class="colors" id="colors"></div>
-    </section>
-  </main>
+      <div id="rack">
+        <div id="tabs"></div>
+        <div id="pieces"></div>
+        <div id="hairPanel"></div>
+      </div>
 
-  <!-- 저장/불러오기 -->
+      <div id="toolbar">
+        <div class="logo">👑 공주님 옷 입히기</div>
+        <button class="cloud-btn" id="resetBtn">원래대로</button>
+        <button class="cloud-btn gold" id="randomBtn">🎲 랜덤</button>
+        <button class="cloud-btn blue" id="fullBtn">전체모습</button>
+        <button class="cloud-btn" id="photoBtn">📸 사진</button>
+        <button class="cloud-btn gold" id="saveBtn">💾 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 저장 / 불러오기 -->
   <div class="modal" id="saveModal">
     <div class="modal-box">
       <h2>💾 옷장 서랍</h2>
       <div class="slots" id="slots"></div>
       <p class="hint" id="saveHint"></p>
-      <div class="modal-actions">
-        <button class="btn gray" data-close>닫기</button>
-      </div>
+      <div class="modal-actions"><button class="cloud-btn blue" data-close>닫기</button></div>
     </div>
   </div>
 
@@ -315,706 +291,1106 @@
     <div class="modal-box">
       <h2>📸 공주님 사진</h2>
       <img id="photoImg" alt="공주님 사진">
-      <p class="hint">사진이 저장되지 않으면 사진을 길게 누르거나 오른쪽 클릭해서 저장하세요.</p>
+      <p class="hint">저장이 안 되면 사진을 길게 누르거나 오른쪽 클릭해서 저장하세요.</p>
       <div class="modal-actions">
-        <a class="btn sky" id="photoDownload" download="princess.png">⬇️ 내려받기</a>
-        <button class="btn gray" data-close>닫기</button>
+        <a class="cloud-btn gold" id="photoDownload" download="princess.png">⬇️ 내려받기</a>
+        <button class="cloud-btn blue" data-close>닫기</button>
       </div>
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
 
+  <!-- 옷 크기를 재기 위한 숨은 그림판 -->
+  <svg id="measure" viewBox="0 0 360 900" width="360" height="900"
+       style="position:absolute;left:-9999px;top:0;visibility:hidden"></svg>
+
   <script>
   // =====================================================================
-  //  도우미 함수
+  //  그림 도우미
   // =====================================================================
   function shade(hex, p) {
     var n = parseInt(hex.slice(1), 16);
     var r = n >> 16, g = (n >> 8) & 255, b = n & 255;
     var t = p < 0 ? 0 : 255, a = Math.abs(p);
-    r = Math.round((t - r) * a + r);
-    g = Math.round((t - g) * a + g);
-    b = Math.round((t - b) * a + b);
+    r = Math.round((t - r) * a + r); g = Math.round((t - g) * a + g); b = Math.round((t - b) * a + b);
     return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+  }
+  var mx = function (x) { return 360 - x; };
+  // 왼쪽 절반 윤곽만 적으면 좌우 대칭 도형을 만들어 줍니다.
+  function sym(start, segs) {
+    var d = 'M' + start[0] + ' ' + start[1], pts = [start];
+    segs.forEach(function (s) {
+      d += ' ' + s[0] + s.slice(1).join(' ');
+      pts.push([s[s.length - 2], s[s.length - 1]]);
+    });
+    var last = pts[pts.length - 1];
+    d += ' L' + mx(last[0]) + ' ' + last[1];
+    for (var i = segs.length - 1; i >= 0; i--) {
+      var s = segs[i], prev = pts[i];
+      if (s[0] === 'L') d += ' L' + mx(prev[0]) + ' ' + prev[1];
+      else if (s[0] === 'Q') d += ' Q' + mx(s[1]) + ' ' + s[2] + ' ' + mx(prev[0]) + ' ' + prev[1];
+      else if (s[0] === 'C') d += ' C' + mx(s[3]) + ' ' + s[4] + ' ' + mx(s[1]) + ' ' + s[2] + ' ' + mx(prev[0]) + ' ' + prev[1];
+    }
+    return d + 'Z';
+  }
+  var MIR = function (s) { return '<g transform="matrix(-1 0 0 1 360 0)">' + s + '</g>'; };
+  var BOTH = function (s) { return s + MIR(s); };
+  var OUT = function (c) { return shade(c, -0.4); };
+  // 둥근 느낌을 주는 가로 그라디언트
+  function G(id, c) {
+    return '<linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="0">' +
+      '<stop offset="0" stop-color="' + shade(c, -0.22) + '"/><stop offset=".36" stop-color="' + shade(c, 0.25) + '"/>' +
+      '<stop offset=".62" stop-color="' + c + '"/><stop offset="1" stop-color="' + shade(c, -0.28) + '"/></linearGradient>';
+  }
+  function VG(id, stops) {
+    return '<linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1">' + stops.map(function (s) {
+      return '<stop offset="' + s[0] + '" stop-color="' + s[1] + '"' + (s[2] != null ? ' stop-opacity="' + s[2] + '"' : '') + '/>';
+    }).join('') + '</linearGradient>';
+  }
+  function SH(id) { // 무늬 옷 위에 덮는 그림자
+    return '<linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="0">' +
+      '<stop offset="0" stop-color="#2a0030" stop-opacity=".28"/><stop offset=".35" stop-color="#fff" stop-opacity=".12"/>' +
+      '<stop offset=".6" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#2a0030" stop-opacity=".3"/></linearGradient>';
+  }
+  function fillAttr(id, c, w) {
+    return 'fill="url(#' + id + ')" stroke="' + OUT(c) + '" stroke-width="' + (w || 1.6) + '" stroke-linejoin="round"';
+  }
+  function P(d, attr) { return '<path d="' + d + '" ' + attr + '/>'; }
+  function line(d, c, w, extra) {
+    return '<path d="' + d + '" stroke="' + c + '" stroke-width="' + (w || 1.2) + '" fill="none" stroke-linecap="round" stroke-linejoin="round" ' + (extra || '') + '/>';
+  }
+  function spark(x, y, r, c) {
+    return '<path d="M' + x + ' ' + (y - r) + ' Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y + ' Q' + x + ' ' + y + ' ' + x + ' ' + (y + r) +
+      ' Q' + x + ' ' + y + ' ' + (x - r) + ' ' + y + ' Q' + x + ' ' + y + ' ' + x + ' ' + (y - r) + 'Z" fill="' + (c || '#fff') + '"/>';
   }
   function starPath(cx, cy, R, r) {
     var pts = [];
     for (var i = 0; i < 10; i++) {
-      var rad = i % 2 === 0 ? R : r;
-      var ang = -Math.PI / 2 + i * Math.PI / 5;
-      pts.push((cx + rad * Math.cos(ang)).toFixed(1) + ' ' + (cy + rad * Math.sin(ang)).toFixed(1));
+      var rad = i % 2 ? r : R, a = -Math.PI / 2 + i * Math.PI / 5;
+      pts.push((cx + rad * Math.cos(a)).toFixed(1) + ' ' + (cy + rad * Math.sin(a)).toFixed(1));
     }
     return 'M' + pts.join(' L') + 'Z';
   }
-  function flower(x, y, color, size) {
-    var s = size || 4, out = '';
+  function heart(x, y, s, fill, stroke, sw) {
+    return '<path d="M' + x + ' ' + (y + s * 0.9) + ' C' + (x - s * 1.4) + ' ' + y + ' ' + (x - s * 0.9) + ' ' + (y - s * 0.95) + ' ' + x + ' ' + (y - s * 0.35) +
+      ' C' + (x + s * 0.9) + ' ' + (y - s * 0.95) + ' ' + (x + s * 1.4) + ' ' + y + ' ' + x + ' ' + (y + s * 0.9) + 'Z" fill="' + fill + '" stroke="' + (stroke || 'none') + '" stroke-width="' + (sw || 1.2) + '" stroke-linejoin="round"/>';
+  }
+  function flower(x, y, s, c, center) {
+    var out = '';
     for (var i = 0; i < 5; i++) {
       var a = i * Math.PI * 2 / 5 - Math.PI / 2;
-      out += '<circle cx="' + (x + Math.cos(a) * s).toFixed(1) + '" cy="' + (y + Math.sin(a) * s).toFixed(1) +
-        '" r="' + s + '" fill="' + color + '"/>';
+      out += '<circle cx="' + (x + Math.cos(a) * s).toFixed(1) + '" cy="' + (y + Math.sin(a) * s).toFixed(1) + '" r="' + (s * 0.85).toFixed(1) +
+        '" fill="' + c + '" stroke="' + shade(c, -0.25) + '" stroke-width=".8"/>';
     }
-    return out + '<circle cx="' + x + '" cy="' + y + '" r="' + (s * 0.8).toFixed(1) + '" fill="#ffe066"/>';
+    return out + '<circle cx="' + x + '" cy="' + y + '" r="' + (s * 0.6).toFixed(1) + '" fill="' + (center || '#ffd23f') + '"/>';
   }
-  function escapeXml(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
+  function rose(x, y, s, c) {
+    return '<circle cx="' + x + '" cy="' + y + '" r="' + s + '" fill="' + c + '" stroke="' + shade(c, -0.3) + '" stroke-width="1"/>' +
+      line('M' + (x - s * 0.5) + ' ' + y + ' Q' + x + ' ' + (y - s * 0.8) + ' ' + (x + s * 0.5) + ' ' + y + ' Q' + x + ' ' + (y + s * 0.5) + ' ' + (x - s * 0.2) + ' ' + (y - s * 0.1), shade(c, -0.3), 1);
   }
-  // 반짝이 위치 (항상 같은 모양이 나오도록 고정)
-  var NIGHT_STARS = [];
-  (function () {
-    var seed = 7;
-    function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
-    for (var i = 0; i < 40; i++) NIGHT_STARS.push([rnd() * 300, rnd() * 330, 0.6 + rnd() * 1.8]);
-  })();
+  function bow(x, y, s, c) {
+    var d = shade(c, -0.35);
+    return '<path d="M' + (x - 2) + ' ' + (y + 2) + ' L' + (x - s * 0.8) + ' ' + (y + s * 1.7) + ' L' + (x - s * 0.25) + ' ' + (y + s * 1.55) + 'Z M' +
+      (x + 2) + ' ' + (y + 2) + ' L' + (x + s * 0.8) + ' ' + (y + s * 1.7) + ' L' + (x + s * 0.25) + ' ' + (y + s * 1.55) + 'Z" fill="' + shade(c, -0.1) + '" stroke="' + d + '" stroke-width="1.2" stroke-linejoin="round"/>' +
+      '<path d="M' + x + ' ' + y + ' C' + (x - s * 0.6) + ' ' + (y - s * 1.2) + ' ' + (x - s * 1.7) + ' ' + (y - s) + ' ' + (x - s * 1.55) + ' ' + y +
+      ' C' + (x - s * 1.7) + ' ' + (y + s) + ' ' + (x - s * 0.6) + ' ' + (y + s * 1.1) + ' ' + x + ' ' + y + 'Z M' + x + ' ' + y +
+      ' C' + (x + s * 0.6) + ' ' + (y - s * 1.2) + ' ' + (x + s * 1.7) + ' ' + (y - s) + ' ' + (x + s * 1.55) + ' ' + y +
+      ' C' + (x + s * 1.7) + ' ' + (y + s) + ' ' + (x + s * 0.6) + ' ' + (y + s * 1.1) + ' ' + x + ' ' + y + 'Z" fill="' + c + '" stroke="' + d + '" stroke-width="1.2"/>' +
+      '<circle cx="' + x + '" cy="' + y + '" r="' + (s * 0.32) + '" fill="' + shade(c, 0.3) + '" stroke="' + d + '" stroke-width="1.2"/>';
+  }
+  function frill(x1, x2, y, n, depth, fill, stroke) {
+    var w = (x2 - x1) / n, d = 'M' + x1 + ' ' + (y - 7) + ' L' + x1 + ' ' + y;
+    for (var i = 0; i < n; i++) d += ' Q' + (x1 + i * w + w / 2) + ' ' + (y + depth * 2) + ' ' + (x1 + (i + 1) * w) + ' ' + y;
+    d += ' L' + x2 + ' ' + (y - 7) + 'Z';
+    return P(d, 'fill="' + fill + '" stroke="' + stroke + '" stroke-width="1" stroke-linejoin="round"');
+  }
+  function qpt(p0, c, p2, t) {
+    var u = 1 - t;
+    return [u * u * p0[0] + 2 * u * t * c[0] + t * t * p2[0], u * u * p0[1] + 2 * u * t * c[1] + t * t * p2[1]];
+  }
+  function beads(p0, c, p2, n, r, fill, stroke) {
+    var out = '';
+    for (var i = 0; i <= n; i++) {
+      var q = qpt(p0, c, p2, i / n);
+      out += '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="' + r + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1"/>';
+    }
+    return out;
+  }
+  function snowflake(x, y, r, c) {
+    var d = '';
+    for (var i = 0; i < 3; i++) {
+      var a = i * Math.PI / 3, dx = Math.cos(a) * r, dy = Math.sin(a) * r;
+      d += 'M' + (x - dx).toFixed(1) + ' ' + (y - dy).toFixed(1) + ' L' + (x + dx).toFixed(1) + ' ' + (y + dy).toFixed(1) + ' ';
+    }
+    return line(d, c, 1.4);
+  }
+
+  // 공통 소매 모양 (왼팔 기준, BOTH로 양쪽)
+  var SLEEVE_SHORT = 'M127 249 Q99 255 97 298 L95 324 Q112 331 129 324 L133 282Z';
+  var SLEEVE_LONG = 'M127 249 Q99 255 98 300 L92 400 Q88 452 90 497 L115 499 Q118 452 123 402 L132 318 Q134 288 135 268Z';
 
   // =====================================================================
-  //  배경
+  //  공주님 몸
   // =====================================================================
-  var BG = {
-    castle: function (g) {
-      return '<defs><linearGradient id="' + g + 'bg" x1="0" y1="0" x2="0" y2="1">' +
-        '<stop offset="0" stop-color="#ffc9e3"/><stop offset="1" stop-color="#fff3f9"/></linearGradient></defs>' +
-        '<rect width="300" height="520" fill="url(#' + g + 'bg)"/>' +
-        '<g fill="#fff" opacity=".9"><circle cx="40" cy="60" r="16"/><circle cx="60" cy="54" r="20"/><circle cx="82" cy="62" r="14"/>' +
-        '<circle cx="230" cy="90" r="14"/><circle cx="250" cy="82" r="18"/><circle cx="270" cy="92" r="12"/></g>' +
-        '<g fill="#f3c1df" stroke="#e7a3cb" stroke-width="2">' +
-        '<rect x="14" y="200" width="50" height="260"/><rect x="236" y="200" width="50" height="260"/>' +
-        '<rect x="50" y="260" width="200" height="200"/><rect x="118" y="150" width="64" height="120"/></g>' +
-        '<g fill="#c99aea" stroke="#a979d1" stroke-width="2">' +
-        '<path d="M8 202 L39 140 L70 202Z"/><path d="M230 202 L261 140 L292 202Z"/><path d="M112 152 L150 80 L188 152Z"/></g>' +
-        '<g fill="#ffe3f0"><path d="M39 140 L39 120 L54 126 L39 132Z"/><path d="M261 140 L261 120 L276 126 L261 132Z"/><path d="M150 80 L150 56 L168 63 L150 70Z"/></g>' +
-        '<g fill="#fff6c8" stroke="#e7a3cb" stroke-width="2">' +
-        '<path d="M30 240 Q39 226 48 240 L48 262 L30 262Z"/><path d="M252 240 Q261 226 270 240 L270 262 L252 262Z"/>' +
-        '<path d="M140 180 Q150 166 160 180 L160 206 L140 206Z"/></g>' +
-        '<g fill="#fff" opacity=".7"><path d="' + starPath(100, 110, 6, 2.5) + '"/><path d="' + starPath(210, 150, 5, 2) + '"/></g>' +
-        '<rect y="450" width="300" height="70" fill="#f7b3d4"/>' +
-        '<path d="M0 450 H300" stroke="#eb95c0" stroke-width="3"/>';
-    },
-    garden: function (g) {
-      var fl = '';
-      var spots = [[20, 470, '#ff8fc7'], [55, 492, '#fff27a'], [90, 478, '#b5a1ff'], [215, 482, '#ff8fc7'],
-        [250, 470, '#ff6b6b'], [280, 494, '#fff27a'], [35, 505, '#b5a1ff'], [265, 510, '#ff8fc7']];
-      spots.forEach(function (f) { fl += flower(f[0], f[1], f[2], 4.5); });
-      return '<defs><linearGradient id="' + g + 'bg" x1="0" y1="0" x2="0" y2="1">' +
-        '<stop offset="0" stop-color="#9fdcff"/><stop offset="1" stop-color="#e6f8ff"/></linearGradient></defs>' +
-        '<rect width="300" height="520" fill="url(#' + g + 'bg)"/>' +
-        '<circle cx="250" cy="60" r="28" fill="#ffe066"/><circle cx="250" cy="60" r="38" fill="#ffe066" opacity=".3"/>' +
-        '<g fill="#fff"><circle cx="50" cy="80" r="16"/><circle cx="72" cy="72" r="20"/><circle cx="94" cy="82" r="14"/></g>' +
-        '<ellipse cx="60" cy="400" rx="140" ry="80" fill="#9ee29b"/><ellipse cx="260" cy="410" rx="140" ry="85" fill="#8bd88a"/>' +
-        '<g fill="#6cc46f"><circle cx="30" cy="360" r="26"/><circle cx="60" cy="350" r="30"/><circle cx="270" cy="355" r="30"/><circle cx="240" cy="365" r="24"/></g>' +
-        flower(45, 352, '#ff8fc7', 4) + flower(262, 350, '#fff27a', 4) + flower(70, 370, '#ffffff', 3.5) +
-        '<rect y="440" width="300" height="80" fill="#7ccf7b"/>' + fl;
-    },
-    night: function (g) {
-      var st = '';
-      NIGHT_STARS.forEach(function (s) {
-        st += '<circle cx="' + s[0].toFixed(1) + '" cy="' + s[1].toFixed(1) + '" r="' + s[2].toFixed(1) + '" fill="#fff" opacity=".85"/>';
-      });
-      return '<defs><linearGradient id="' + g + 'bg" x1="0" y1="0" x2="0" y2="1">' +
-        '<stop offset="0" stop-color="#1c1f52"/><stop offset="1" stop-color="#5a3f9a"/></linearGradient></defs>' +
-        '<rect width="300" height="520" fill="url(#' + g + 'bg)"/>' + st +
-        '<circle cx="235" cy="75" r="30" fill="#fff5c2"/><circle cx="248" cy="66" r="28" fill="#2a2b64" opacity=".95"/>' +
-        '<path d="' + starPath(60, 60, 9, 4) + '" fill="#ffe066"/><path d="' + starPath(120, 30, 6, 2.5) + '" fill="#ffe066"/>' +
-        '<rect y="440" width="300" height="80" fill="#3b2c6e"/>' +
-        '<g fill="#6b56b5">' +
-        '<rect x="0" y="420" width="300" height="10"/>' +
-        '<rect x="10" y="430" width="8" height="18"/><rect x="40" y="430" width="8" height="18"/><rect x="70" y="430" width="8" height="18"/>' +
-        '<rect x="222" y="430" width="8" height="18"/><rect x="252" y="430" width="8" height="18"/><rect x="282" y="430" width="8" height="18"/></g>';
-    },
-    ballroom: function (g) {
-      var tiles = '';
-      for (var i = 0; i < 10; i++) {
-        tiles += '<rect x="' + (i * 30) + '" y="440" width="30" height="80" fill="' + (i % 2 ? '#f6e3c4' : '#fff4e0') + '"/>';
-      }
-      var col = function (x) {
-        return '<rect x="' + x + '" y="60" width="34" height="380" fill="#fff" stroke="#e8c77a" stroke-width="2"/>' +
-          '<rect x="' + (x - 6) + '" y="52" width="46" height="14" rx="3" fill="#f3d58c"/>' +
-          '<rect x="' + (x - 6) + '" y="430" width="46" height="14" rx="3" fill="#f3d58c"/>' +
-          '<path d="M' + (x + 9) + ' 70 V430 M' + (x + 17) + ' 70 V430 M' + (x + 25) + ' 70 V430" stroke="#f0e2c0" stroke-width="2"/>';
-      };
-      var drops = '';
-      for (var j = 0; j < 7; j++) {
-        var dx = 115 + j * 11.6;
-        drops += '<line x1="' + dx + '" y1="44" x2="' + dx + '" y2="' + (58 + (j % 2) * 8) + '" stroke="#fff3b0" stroke-width="1.5"/>' +
-          '<circle cx="' + dx + '" cy="' + (60 + (j % 2) * 8) + '" r="3" fill="#fffbe0" stroke="#f0cf60"/>';
-      }
-      return '<defs><linearGradient id="' + g + 'bg" x1="0" y1="0" x2="0" y2="1">' +
-        '<stop offset="0" stop-color="#ffe8b8"/><stop offset="1" stop-color="#fff6e3"/></linearGradient></defs>' +
-        '<rect width="300" height="520" fill="url(#' + g + 'bg)"/>' +
-        '<path d="M0 0 H300 V36 Q270 60 240 36 Q210 60 180 36 Q150 60 120 36 Q90 60 60 36 Q30 60 0 36Z" fill="#c9304f"/>' +
-        col(12) + col(254) +
-        '<line x1="150" y1="0" x2="150" y2="30" stroke="#d9a21b" stroke-width="2"/>' +
-        '<path d="M108 38 Q150 58 192 38 L186 32 Q150 46 114 32Z" fill="#f3c34a" stroke="#d9a21b"/>' + drops +
-        tiles + '<path d="M110 440 L190 440 L230 520 L70 520Z" fill="#c9304f"/>' +
-        '<path d="M110 440 L190 440" stroke="#f3c34a" stroke-width="3"/>';
-    }
-  };
+  function bodySVG(p, skin) {
+    var sd = shade(skin, -0.25), sid = p + 'skin';
+    var sk = 'fill="url(#' + sid + ')" stroke="' + sd + '" stroke-width="1.3" stroke-linejoin="round"';
+    var leg = P('M126 450 C116 520 130 600 140 645 C136 700 142 760 150 836 L168 836 C168 780 176 720 172 645 C178 600 182 540 181 494 Z', sk) +
+      line('M150 640 Q156 646 162 640', sd, 1.2, 'opacity=".6"') +
+      P('M149 830 Q144 856 149 871 Q159 880 170 871 Q174 852 169 830Z', sk) +
+      line('M153 866 Q159 870 166 866', sd, 1, 'opacity=".5"');
+    var arm = P('M124 254 Q104 262 103 300 L97 400 Q93 452 95 500 L111 502 Q114 452 119 402 L128 318 Q130 290 132 272 Z', sk) +
+      line('M104 396 Q108 400 114 398', sd, 1, 'opacity=".5"');
+    var uw = '#ffb3d1';
+    return '<defs>' + G(sid, skin) + G(p + 'uw', uw) + '</defs>' +
+      BOTH(leg) +
+      P('M166 186 L166 240 Q180 247 194 240 L194 186Z', sk) +
+      P(sym([180, 244], [['Q', 170, 244, 166, 238], ['Q', 150, 248, 124, 256], ['Q', 118, 282, 127, 312], ['Q', 134, 342, 148, 372],
+        ['Q', 138, 410, 125, 446], ['Q', 120, 470, 128, 490], ['L', 180, 498]]), sk) +
+      line('M170 250 Q164 256 158 254 M190 250 Q196 256 202 254', sd, 1, 'opacity=".5"') +
+      line('M180 360 L180 366', sd, 1.5, 'opacity=".5"') +
+      // 속옷 (튜브탑 + 반바지)
+      P(sym([180, 292], [['Q', 160, 280, 130, 288], ['Q', 126, 312, 133, 334], ['Q', 160, 342, 180, 340]]), fillAttr(p + 'uw', uw, 1.3)) +
+      line('M140 300 Q160 306 180 304 Q200 306 220 300', '#fff', 1.5, 'opacity=".6"') +
+      P(sym([180, 430], [['Q', 150, 428, 127, 432], ['Q', 121, 450, 124, 466], ['Q', 150, 474, 168, 488], ['L', 180, 486]]), fillAttr(p + 'uw', uw, 1.3)) +
+      bow(180, 436, 5, '#ff6fae') +
+      BOTH(arm) +
+      P('M166 196 Q180 214 194 196 L194 210 Q180 226 166 210Z', 'fill="' + sd + '" opacity=".28"') +
+      // 얼굴
+      P('M126 118 Q124 168 148 194 Q166 210 180 211 Q194 210 212 194 Q236 168 234 118 Q234 58 180 56 Q126 58 126 118Z',
+        'fill="' + skin + '" stroke="' + sd + '" stroke-width="1.3"') +
+      faceSVG(p, skin);
+  }
+
+  function handsSVG(p, skin) {
+    var sd = shade(skin, -0.25);
+    var hand = P('M95 496 Q88 512 90 530 Q92 547 101 553 Q109 555 112 546 L114 530 Q117 518 112 499 Z',
+        'fill="url(#' + p + 'skin)" stroke="' + sd + '" stroke-width="1.3" stroke-linejoin="round"') +
+      line('M110 512 Q117 520 113 531 M99 540 L100 550 M104 541 L105 552', sd, 1, 'opacity=".6"');
+    return BOTH(hand);
+  }
+
+  function faceSVG(p, skin) {
+    var sd = shade(skin, -0.25);
+    var eye =
+      P('M136 148 Q138 131 156 130 Q172 131 174 146 Q172 165 155 167 Q139 165 136 148Z', 'fill="#fff"') +
+      '<ellipse cx="156" cy="150" rx="11.5" ry="14.5" fill="url(#' + p + 'iris)" stroke="#1d3f7a" stroke-width="1"/>' +
+      '<ellipse cx="156" cy="152" rx="5.5" ry="7.5" fill="#15203d"/>' +
+      '<ellipse cx="151" cy="144" rx="4.2" ry="4.8" fill="#fff"/><circle cx="162" cy="158" r="2.2" fill="#fff"/>' +
+      line('M148 160 Q156 166 164 159', '#c8f0ff', 1.6, 'opacity=".9"') +
+      P('M131 147 Q135 127 156 125 Q173 125 179 140 Q171 132 156 132 Q140 133 136 150Z', 'fill="#2b1a2e"') +
+      P('M134 140 L123 132 L133 147Z M137 134 L128 124 L140 132Z', 'fill="#2b1a2e"') +
+      line('M143 166 Q155 171 168 165', '#8a5a60', 1.2) +
+      line('M140 122 Q156 114 173 122', sd, 1.2, 'opacity=".8"');
+    return '<defs>' + VG(p + 'iris', [[0, '#1c3a86'], [0.5, '#3f8fe0'], [1, '#a6ecff']]) + '</defs>' +
+      '<g class="eyes">' + eye + MIR(eye) + '</g>' +
+      BOTH(line('M141 108 Q154 102 168 106', '#9a6048', 1.8)) +
+      line('M181 172 Q184 178 179 180', sd, 1.4) +
+      P('M170 189 Q180 197 190 189 Q180 193 170 189Z', 'fill="#f07a93" stroke="#d65a78" stroke-width="1.2"') +
+      line('M176 198 Q180 199 184 198', '#f5a3b5', 1.2) +
+      BOTH('<ellipse cx="141" cy="177" rx="13" ry="6" fill="#ff8fb0" opacity=".4"/>' +
+        line('M134 176 L137 172 M139 177 L142 173 M144 178 L147 174', '#ff7fa3', 1, 'opacity=".7"'));
+  }
 
   // =====================================================================
-  //  머리 모양 (뒷머리 / 앞머리)
+  //  머리 모양
   // =====================================================================
-  var BANGS = 'M104 108 Q102 58 150 58 Q198 58 196 108 Q186 88 172 82 Q164 98 150 100 Q138 90 130 82 Q114 90 104 108Z';
-  function hairPath(d, c) {
-    return '<path d="' + d + '" fill="' + c + '" stroke="' + shade(c, -0.25) + '" stroke-width="2" stroke-linejoin="round"/>';
+  var BANGS = 'M122 128 C114 66 148 38 180 38 C212 38 246 66 238 128 Q232 108 224 98 Q224 112 216 122 Q210 102 198 90 Q200 106 190 118 ' +
+              'Q186 98 178 88 Q174 104 164 118 Q162 98 154 92 Q150 108 142 120 Q140 104 136 98 Q130 110 122 128Z';
+  function hairDefs(p, c) {
+    return '<defs>' + VG(p + 'hair', [[0, shade(c, 0.22)], [0.45, c], [1, shade(c, -0.2)]]) + '</defs>';
   }
-  function hairShine(c) {
-    return '<path d="M122 72 Q134 64 146 66" stroke="' + shade(c, 0.5) + '" stroke-width="4" fill="none" stroke-linecap="round" opacity=".8"/>';
+  function hairAttr(p, c) { return 'fill="url(#' + p + 'hair)" stroke="' + shade(c, -0.38) + '" stroke-width="1.5" stroke-linejoin="round"'; }
+  function bangs(p, c) {
+    var hs = shade(c, -0.38);
+    return P(BANGS, hairAttr(p, c)) +
+      line('M180 42 Q176 68 178 86 M160 48 Q150 74 154 90 M200 48 Q210 74 198 88 M140 60 Q132 84 136 96 M220 60 Q228 84 224 96', hs, 1, 'opacity=".45"') +
+      line('M140 66 Q180 50 220 66', shade(c, 0.6), 6, 'stroke-dasharray="14 7" opacity=".75"');
   }
-  var HAIR = {
-    long: {
-      back: function (c) {
-        return hairPath('M98 105 Q92 48 150 48 Q208 48 202 105 Q212 200 212 290 Q180 306 150 298 Q120 306 88 290 Q88 200 98 105Z', c);
-      },
-      front: function (c) {
-        return hairPath(BANGS, c) +
-          hairPath('M104 100 Q96 145 106 176 Q114 145 113 108Z', c) +
-          hairPath('M196 100 Q204 145 194 176 Q186 145 187 108Z', c) + hairShine(c);
-      }
-    },
+  var HAIRS = {
     wavy: {
-      back: function (c) {
-        return hairPath('M98 105 Q92 48 150 48 Q208 48 202 105 Q222 140 205 175 Q226 210 208 245 Q230 280 206 314 Q150 326 94 314 Q70 280 92 245 Q74 210 95 175 Q78 140 98 105Z', c);
+      name: '웨이브',
+      back: function (p, c) {
+        return P(sym([180, 34], [['C', 112, 34, 88, 96, 94, 168], ['C', 98, 226, 76, 266, 88, 320], ['C', 100, 374, 70, 412, 82, 464],
+          ['C', 90, 504, 128, 512, 142, 486], ['L', 180, 480]]), hairAttr(p, c)) +
+          BOTH(line('M112 150 C104 220 94 262 102 320 C108 372 90 412 98 462 M122 250 C114 300 118 340 110 390', shade(c, -0.38), 1.2, 'opacity=".55"'));
       },
-      front: function (c) {
-        return hairPath(BANGS, c) +
-          hairPath('M104 100 Q92 130 104 150 Q94 168 106 186 Q116 160 113 108Z', c) +
-          hairPath('M196 100 Q208 130 196 150 Q206 168 194 186 Q184 160 187 108Z', c) + hairShine(c);
+      front: function (p, c) {
+        var lock = P('M130 96 C112 140 108 190 118 236 C126 270 104 300 114 338 C120 362 134 352 134 330 C128 300 144 270 137 236 C130 200 136 150 143 118Z', hairAttr(p, c)) +
+          line('M126 150 C120 200 128 240 122 290', shade(c, -0.38), 1, 'opacity=".5"');
+        return BOTH(lock) + bangs(p, c);
+      }
+    },
+    straight: {
+      name: '긴 생머리',
+      back: function (p, c) {
+        return P(sym([180, 34], [['C', 112, 34, 92, 96, 96, 168], ['L', 90, 470], ['Q', 100, 480, 110, 474], ['Q', 120, 484, 132, 478], ['L', 180, 474]]), hairAttr(p, c)) +
+          BOTH(line('M110 170 L104 460 M122 250 L118 420', shade(c, -0.38), 1.2, 'opacity=".5"'));
+      },
+      front: function (p, c) {
+        return BOTH(P('M130 96 C116 150 114 220 116 334 L130 340 C132 250 137 170 143 118Z', hairAttr(p, c))) + bangs(p, c);
       }
     },
     twin: {
-      back: function (c) {
-        return hairPath('M103 92 Q58 120 68 200 Q74 252 58 296 Q98 266 100 200 Q102 150 112 104Z', c) +
-          hairPath('M197 92 Q242 120 232 200 Q226 252 242 296 Q202 266 200 200 Q198 150 188 104Z', c) +
-          hairPath('M100 112 Q94 52 150 52 Q206 52 200 112Z', c);
+      name: '양갈래',
+      back: function (p, c) {
+        var tail = P('M128 82 C76 90 56 160 64 240 C70 300 48 360 60 420 C68 458 94 468 104 444 C92 404 112 352 104 296 C98 236 112 160 138 110Z', hairAttr(p, c)) +
+          line('M100 120 C80 180 84 240 80 300 C76 360 70 400 82 440', shade(c, -0.38), 1.2, 'opacity=".55"');
+        return BOTH(tail) + P(sym([180, 34], [['C', 112, 34, 94, 96, 100, 170], ['Q', 110, 198, 130, 208], ['L', 180, 208]]), hairAttr(p, c));
       },
-      front: function (c) {
-        return hairPath(BANGS, c) + hairShine(c) +
-          '<g fill="#ff6fae" stroke="#d6437f" stroke-width="1.5">' +
-          '<path d="M104 94 L90 84 L92 104Z"/><path d="M104 94 L116 82 L118 102Z"/><circle cx="104" cy="94" r="4.5"/>' +
-          '<path d="M196 94 L210 84 L208 104Z"/><path d="M196 94 L184 82 L182 102Z"/><circle cx="196" cy="94" r="4.5"/></g>';
+      front: function (p, c) {
+        return BOTH(P('M130 96 C118 130 118 170 126 204 C132 178 136 140 143 118Z', hairAttr(p, c))) + bangs(p, c) +
+          BOTH('<circle cx="128" cy="90" r="10" fill="#ff5fae" stroke="#c2188a" stroke-width="1.5"/>' + bow(122, 82, 7, '#ff8fc8'));
       }
     },
     bun: {
-      back: function (c) {
-        return hairPath('M150 26 A24 24 0 1 1 149.9 26Z', c) +
-          '<path d="M134 44 Q150 36 166 44" stroke="' + shade(c, -0.25) + '" stroke-width="2" fill="none"/>' +
-          hairPath('M100 112 Q94 54 150 54 Q206 54 200 112Z', c);
+      name: '올림머리',
+      back: function (p, c) {
+        return '<circle cx="180" cy="30" r="32" ' + hairAttr(p, c) + '/>' +
+          line('M160 20 Q180 6 200 20 M156 36 Q180 50 204 34', shade(c, -0.38), 1.2, 'opacity=".6"') +
+          P(sym([180, 34], [['C', 112, 34, 96, 96, 102, 170], ['Q', 112, 196, 132, 204], ['L', 180, 204]]), hairAttr(p, c));
       },
-      front: function (c) {
-        return hairPath('M104 112 Q104 60 150 58 Q196 60 196 112 Q182 80 152 78 Q128 80 114 96 Q108 102 104 112Z', c) +
-          hairPath('M104 104 Q100 130 108 150 Q112 128 110 108Z', c) +
-          hairPath('M196 104 Q200 130 192 150 Q188 128 190 108Z', c) + hairShine(c);
+      front: function (p, c) {
+        return BOTH(P('M130 100 C116 140 118 200 128 252 C130 230 136 180 141 120Z', hairAttr(p, c))) + bangs(p, c) +
+          line('M162 8 Q180 -2 198 8', shade(c, 0.6), 4, 'opacity=".7"');
       }
     },
     bob: {
-      back: function (c) {
-        return hairPath('M96 112 Q90 52 150 52 Q210 52 204 112 Q210 160 200 182 Q150 192 100 182 Q90 160 96 112Z', c);
+      name: '단발',
+      back: function (p, c) {
+        return P(sym([180, 34], [['C', 112, 34, 92, 96, 98, 170], ['Q', 100, 208, 118, 224], ['Q', 150, 230, 180, 228]]), hairAttr(p, c));
       },
-      front: function (c) {
-        return hairPath('M104 110 Q102 58 150 58 Q198 58 196 110 Q170 92 150 86 Q130 92 104 110Z', c) +
-          hairPath('M103 104 Q95 150 108 176 Q117 150 114 110Z', c) +
-          hairPath('M197 104 Q205 150 192 176 Q183 150 186 110Z', c) + hairShine(c);
-      }
-    },
-    pony: {
-      back: function (c) {
-        return hairPath('M176 62 Q246 70 238 160 Q232 232 252 280 Q206 262 202 184 Q200 124 180 92Z', c) +
-          hairPath('M100 112 Q94 52 150 52 Q206 52 200 112Z', c);
-      },
-      front: function (c) {
-        return hairPath('M104 110 Q102 58 150 58 Q198 58 196 110 Q190 80 160 74 Q150 92 104 110Z', c) +
-          '<circle cx="186" cy="66" r="6" fill="#ff6fae" stroke="#d6437f" stroke-width="1.5"/>' + hairShine(c);
+      front: function (p, c) {
+        return BOTH(P('M128 100 C110 140 110 192 124 224 C132 198 136 150 143 118Z', hairAttr(p, c))) + bangs(p, c);
       }
     }
   };
+  var HAIR_ORDER = ['wavy', 'straight', 'twin', 'bun', 'bob'];
+  var HAIR_COLORS = ['#c8742f', '#f4cf6a', '#6b4028', '#2d2433', '#f59ac4', '#a88bea', '#8fd0f0', '#ececf4'];
+  var SKIN_COLORS = ['#ffe6d8', '#f8d4b8', '#e4b089', '#b98260'];
 
   // =====================================================================
-  //  몸, 얼굴
+  //  옷 (모두 공주님 몸 좌표에 맞춰 그림)
   // =====================================================================
-  function body(skin) {
-    var d = shade(skin, -0.18);
-    return '<path d="M128 182 Q106 236 100 300" fill="none" stroke="' + d + '" stroke-width="15" stroke-linecap="round"/>' +
-      '<path d="M172 182 Q194 236 200 300" fill="none" stroke="' + d + '" stroke-width="15" stroke-linecap="round"/>' +
-      '<path d="M128 182 Q106 236 100 300" fill="none" stroke="' + skin + '" stroke-width="12" stroke-linecap="round"/>' +
-      '<path d="M172 182 Q194 236 200 300" fill="none" stroke="' + skin + '" stroke-width="12" stroke-linecap="round"/>' +
-      '<g fill="' + skin + '" stroke="' + d + '" stroke-width="1.5">' +
-      '<rect x="135" y="250" width="12" height="228" rx="5"/><rect x="153" y="250" width="12" height="228" rx="5"/>' +
-      '<rect x="141" y="146" width="18" height="36"/>' +
-      '<path d="M124 176 Q150 168 176 176 L170 254 L130 254Z"/></g>';
-  }
-  function hands(skin) {
-    var d = shade(skin, -0.18);
-    return '<g fill="' + skin + '" stroke="' + d + '" stroke-width="1.5">' +
-      '<circle cx="100" cy="302" r="8"/><circle cx="200" cy="302" r="8"/></g>';
-  }
-  function head(skin) {
-    var d = shade(skin, -0.18);
-    return '<g fill="' + skin + '" stroke="' + d + '" stroke-width="1.5">' +
-      '<ellipse cx="104" cy="118" rx="7" ry="10"/><ellipse cx="196" cy="118" rx="7" ry="10"/>' +
-      '<ellipse cx="150" cy="112" rx="46" ry="48"/></g>';
-  }
-  var EYE_DARK = '#3b2440';
-  function eye(x, y, big, side) {
-    var k = big ? 1.2 : 1;
-    var flick = side < 0 ? 'M' + (x - 9) + ' ' + (y - 6) + ' L' + (x - 13) + ' ' + (y - 10)
-                         : 'M' + (x + 9) + ' ' + (y - 6) + ' L' + (x + 13) + ' ' + (y - 10);
-    return '<ellipse cx="' + x + '" cy="' + y + '" rx="' + (7.5 * k) + '" ry="' + (9.5 * k) + '" fill="' + EYE_DARK + '"/>' +
-      '<ellipse cx="' + x + '" cy="' + (y + 2) + '" rx="' + (5.5 * k) + '" ry="' + (6.5 * k) + '" fill="#7a52c7"/>' +
-      '<circle cx="' + (x - 2.5) + '" cy="' + (y - 3) + '" r="2.8" fill="#fff"/>' +
-      '<circle cx="' + (x + 2.5) + '" cy="' + (y + 4) + '" r="1.3" fill="#fff"/>' +
-      '<path d="M' + (x - 9) + ' ' + (y - 6) + ' Q' + x + ' ' + (y - 14 * k) + ' ' + (x + 9) + ' ' + (y - 6) + ' ' + flick +
-      '" stroke="' + EYE_DARK + '" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
-  }
-  function closedEye(x, y) {
-    return '<path d="M' + (x - 8) + ' ' + (y + 1) + ' Q' + x + ' ' + (y - 8) + ' ' + (x + 8) + ' ' + (y + 1) +
-      '" stroke="' + EYE_DARK + '" stroke-width="3" fill="none" stroke-linecap="round"/>';
-  }
-  var BROWS = '<path d="M124 98 Q132 93 140 97 M160 97 Q168 93 176 98" stroke="#8a5a4a" stroke-width="2" fill="none" stroke-linecap="round"/>';
-  var BLUSH = '<ellipse cx="122" cy="133" rx="8" ry="4.5" fill="#ff8fb5" opacity=".55"/>' +
-              '<ellipse cx="178" cy="133" rx="8" ry="4.5" fill="#ff8fb5" opacity=".55"/>';
-  var NOSE = '<path d="M149 127 Q151 129 149 131" stroke="#d99a8a" stroke-width="1.5" fill="none" stroke-linecap="round"/>';
-  var FACE = {
-    smile: function () {
-      return BROWS + eye(132, 115, false, -1) + eye(168, 115, false, 1) + BLUSH + NOSE +
-        '<path d="M142 139 Q150 147 158 139" stroke="#c2456b" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
-    },
-    wink: function () {
-      return BROWS + eye(132, 115, false, -1) + closedEye(168, 116) + BLUSH + NOSE +
-        '<path d="M141 137 Q150 150 159 137Z" fill="#e0567f" stroke="#c2456b" stroke-width="1.5" stroke-linejoin="round"/>' +
-        '<path d="' + starPath(188, 102, 5, 2) + '" fill="#ffd24a"/>';
-    },
-    happy: function () {
-      return BROWS + closedEye(132, 117) + closedEye(168, 117) + BLUSH + NOSE +
-        '<path d="M139 136 Q150 154 161 136Z" fill="#e0567f" stroke="#c2456b" stroke-width="1.5" stroke-linejoin="round"/>' +
-        '<path d="M144 143 Q150 150 156 143" fill="#ff9bb8"/>';
-    },
-    surprised: function () {
-      return '<path d="M124 95 Q132 88 140 93 M160 93 Q168 88 176 95" stroke="#8a5a4a" stroke-width="2" fill="none" stroke-linecap="round"/>' +
-        eye(132, 115, true, -1) + eye(168, 115, true, 1) + BLUSH + NOSE +
-        '<ellipse cx="150" cy="142" rx="4.5" ry="5.5" fill="#e0567f" stroke="#c2456b" stroke-width="1.5"/>';
-    }
-  };
+  var ITEMS = [
+    // ---------------- 상의 ----------------
+    { id: 'top_heart', slot: 'top', name: '하트 티셔츠', draw: function (p) {
+      var c = '#ffffff';
+      return '<defs>' + G(p + 'a', c) + '</defs>' +
+        P(sym([180, 254], [['Q', 170, 254, 164, 240], ['Q', 146, 246, 126, 252], ['Q', 120, 282, 127, 312], ['Q', 133, 346, 144, 382],
+          ['Q', 146, 392, 148, 398], ['Q', 166, 402, 180, 402]]), fillAttr(p + 'a', '#e6dff0')) +
+        BOTH(P(SLEEVE_SHORT, fillAttr(p + 'a', '#e6dff0')) + line('M96 316 Q112 323 130 316', '#ff8fb8', 3)) +
+        line('M164 241 Q180 258 196 241', '#ff8fb8', 3) +
+        heart(180, 318, 22, '#ff6fa5', '#e0457f', 1.5) + heart(180, 318, 12, '#ffb3d1') +
+        spark(206, 292, 6, '#ffb3d1') + spark(152, 350, 5, '#ffb3d1');
+    } },
+    { id: 'top_blouse', slot: 'top', name: '리본 블라우스', draw: function (p) {
+      var c = '#fff1d2';
+      return '<defs>' + G(p + 'a', c) + '</defs>' +
+        P(sym([180, 252], [['Q', 168, 252, 164, 240], ['Q', 146, 246, 126, 252], ['Q', 120, 282, 127, 312], ['Q', 133, 346, 146, 372],
+          ['Q', 134, 388, 124, 408], ['Q', 150, 418, 180, 416]]), fillAttr(p + 'a', c)) +
+        line('M146 372 Q180 380 214 372', OUT(c), 1.4) +
+        BOTH(line('M140 382 L134 408 M156 380 L154 414', OUT(c), 1, 'opacity=".5"')) +
+        BOTH(P('M129 246 Q90 242 91 286 Q93 308 111 310 Q126 308 133 294Z', fillAttr(p + 'a', c)) +
+          line('M96 300 Q110 314 128 302', '#ff9fc4', 3.5) + line('M104 262 Q108 282 112 300', OUT(c), 1, 'opacity=".5"')) +
+        BOTH(P('M164 239 Q168 256 180 258 L180 266 Q160 266 156 244Z', 'fill="#fff" stroke="' + OUT(c) + '" stroke-width="1.2"')) +
+        '<g fill="#ff9fc4" stroke="#d9709b"><circle cx="180" cy="296" r="3"/><circle cx="180" cy="322" r="3"/><circle cx="180" cy="348" r="3"/></g>' +
+        bow(180, 262, 9, '#ff6fae');
+    } },
+    { id: 'top_tube', slot: 'top', name: '튜브탑', draw: function (p) {
+      var c = '#ff4f6d';
+      return '<defs>' + G(p + 'a', c) + '</defs>' +
+        P(sym([180, 290], [['Q', 160, 277, 129, 285], ['Q', 124, 314, 132, 344], ['Q', 160, 352, 180, 350]]), fillAttr(p + 'a', c)) +
+        line('M134 300 Q180 312 226 300 M134 316 Q180 328 226 316 M134 332 Q180 344 226 332', shade(c, -0.3), 1.2, 'opacity=".6"') +
+        line('M140 292 Q170 290 176 300', '#fff', 2, 'opacity=".5"') +
+        bow(180, 300, 8, '#ffd1dc');
+    } },
+    { id: 'top_knit', slot: 'top', name: '줄무늬 니트', draw: function (p) {
+      var c = '#8fc9ff';
+      var pat = '<pattern id="' + p + 'st" patternUnits="userSpaceOnUse" width="20" height="18"><rect width="20" height="18" fill="' + c + '"/><rect y="9" width="20" height="9" fill="#ffffff"/></pattern>';
+      var body = sym([180, 250], [['Q', 168, 250, 164, 238], ['Q', 146, 246, 126, 252], ['Q', 120, 282, 127, 312], ['Q', 133, 346, 142, 386],
+        ['L', 140, 404], ['Q', 160, 408, 180, 408]]);
+      return '<defs>' + pat + SH(p + 'sh') + '</defs>' +
+        P(body, 'fill="url(#' + p + 'st)" stroke="' + OUT(c) + '" stroke-width="1.6" stroke-linejoin="round"') + P(body, 'fill="url(#' + p + 'sh)"') +
+        BOTH(P(SLEEVE_LONG, 'fill="url(#' + p + 'st)" stroke="' + OUT(c) + '" stroke-width="1.6" stroke-linejoin="round"') + P(SLEEVE_LONG, 'fill="url(#' + p + 'sh)"') +
+          P('M90 484 L115 486 L115 499 L90 497Z', 'fill="#5aa5e8" stroke="' + OUT(c) + '" stroke-width="1.2"')) +
+        P(sym([180, 394], [['L', 142, 390], ['L', 140, 404], ['Q', 160, 408, 180, 408]]), 'fill="#5aa5e8" stroke="' + OUT(c) + '" stroke-width="1.2"') +
+        line('M164 239 Q180 254 196 239', '#5aa5e8', 5) + heart(206, 300, 7, '#ff6fa5');
+    } },
+    { id: 'top_cami', slot: 'top', name: '프릴 캐미솔', draw: function (p) {
+      var c = '#c7a6ff';
+      var lace = '';
+      for (var x = 134; x <= 226; x += 8) lace += '<circle cx="' + x + '" cy="' + (292 - Math.sin((x - 134) / 92 * Math.PI) * 4).toFixed(1) + '" r="3.5" fill="#fff" stroke="#b9a3e8" stroke-width=".8"/>';
+      return '<defs>' + G(p + 'a', c) + '</defs>' +
+        BOTH(line('M146 292 L157 242', shade(c, -0.25), 3)) +
+        frill(141, 219, 388, 9, 7, shade(c, 0.5), OUT(c)) +
+        P(sym([180, 296], [['Q', 160, 286, 131, 291], ['Q', 125, 318, 133, 344], ['Q', 140, 370, 143, 388], ['Q', 162, 392, 180, 392]]), fillAttr(p + 'a', c)) +
+        lace + bow(180, 300, 6, '#ff8fc8') +
+        line('M160 310 Q156 350 152 386 M200 310 Q204 350 208 386', shade(c, -0.25), 1, 'opacity=".5"');
+    } },
+    { id: 'top_sailor', slot: 'top', name: '세일러 블라우스', draw: function (p) {
+      var c = '#ffffff', navy = '#2a3f8f';
+      return '<defs>' + G(p + 'a', c) + G(p + 'n', navy) + '</defs>' +
+        P(sym([180, 300], [['L', 164, 240], ['Q', 146, 246, 126, 252], ['Q', 120, 282, 127, 312], ['Q', 133, 346, 144, 382], ['Q', 146, 394, 148, 400],
+          ['Q', 166, 404, 180, 404]]), fillAttr(p + 'a', '#dcd6ea')) +
+        BOTH(P(SLEEVE_SHORT, fillAttr(p + 'a', '#dcd6ea')) + line('M96 312 Q112 319 130 312', navy, 3) + line('M96 318 Q112 325 130 318', navy, 1.5) +
+          P('M164 240 Q140 246 124 254 Q126 272 138 282 L180 318 L180 304 Z', fillAttr(p + 'n', navy, 1.4)) +
+          line('M130 262 Q134 272 142 278 L180 310', '#fff', 2)) +
+        P('M180 306 L166 330 L174 344 L180 322 L186 344 L194 330Z', 'fill="#e8283f" stroke="#a8102a" stroke-width="1.2" stroke-linejoin="round"') +
+        bow(180, 308, 9, '#e8283f');
+    } },
 
-  // =====================================================================
-  //  드레스
-  // =====================================================================
-  function bodice(c, d) {
-    return '<path d="M125 176 Q150 186 175 176 L169 256 Q150 262 131 256Z" fill="' + c + '" stroke="' + d + '" stroke-width="2" stroke-linejoin="round"/>';
-  }
-  var DRESS = {
-    ballgown: {
-      front: function (c, g) {
-        var d = shade(c, -0.22), l = shade(c, 0.45);
-        return '<defs><linearGradient id="' + g + 'sk" x1="0" y1="0" x2="1" y2="0">' +
-          '<stop offset="0" stop-color="' + shade(c, -0.1) + '"/><stop offset=".5" stop-color="' + l + '"/>' +
-          '<stop offset="1" stop-color="' + shade(c, -0.1) + '"/></linearGradient></defs>' +
-          '<path d="M132 250 Q92 320 50 450 Q150 478 250 450 Q208 320 168 250Z" fill="url(#' + g + 'sk)" stroke="' + d + '" stroke-width="2"/>' +
-          '<path d="M118 290 Q100 380 90 458 M150 262 L150 470 M182 290 Q200 380 210 458" stroke="' + d + '" stroke-width="1.5" fill="none" opacity=".45"/>' +
-          '<path d="M50 450 Q150 478 250 450 Q256 462 246 470 Q150 496 54 470 Q44 462 50 450Z" fill="' + l + '" stroke="' + d + '" stroke-width="2"/>' +
-          '<g fill="#fff" opacity=".85">' +
-          '<path d="' + starPath(110, 380, 5, 2) + '"/><path d="' + starPath(186, 350, 4, 1.6) + '"/>' +
-          '<path d="' + starPath(160, 420, 5, 2) + '"/><path d="' + starPath(128, 330, 3.5, 1.4) + '"/></g>' +
-          bodice(c, d) +
-          '<path d="M125 176 Q138 192 150 183 Q162 192 175 176" fill="none" stroke="' + l + '" stroke-width="3"/>' +
-          '<ellipse cx="123" cy="186" rx="13" ry="11" fill="' + l + '" stroke="' + d + '" stroke-width="2"/>' +
-          '<ellipse cx="177" cy="186" rx="13" ry="11" fill="' + l + '" stroke="' + d + '" stroke-width="2"/>' +
-          '<rect x="130" y="247" width="40" height="9" rx="4" fill="' + l + '" stroke="' + d + '" stroke-width="1.5"/>' +
-          '<path d="M150 251 L135 241 L135 261Z M150 251 L165 241 L165 261Z" fill="' + l + '" stroke="' + d + '" stroke-width="1.5"/>' +
-          '<circle cx="150" cy="251" r="4" fill="' + d + '"/>';
-      }
-    },
-    mini: {
-      front: function (c) {
-        var d = shade(c, -0.22), l = shade(c, 0.5), lace = '';
-        for (var x = 104; x <= 196; x += 11.5) lace += '<circle cx="' + x.toFixed(1) + '" cy="372" r="5.5"/>';
-        return '<g fill="' + l + '" stroke="' + d + '" stroke-width="1">' + lace + '</g>' +
-          '<path d="M132 250 L98 368 Q150 384 202 368 L168 250Z" fill="' + c + '" stroke="' + d + '" stroke-width="2" stroke-linejoin="round"/>' +
-          '<path d="M141 256 L122 374 M150 256 L150 378 M159 256 L178 374" stroke="' + d + '" stroke-width="1.5" opacity=".4"/>' +
-          '<path d="M131 178 L137 164 M169 178 L163 164" stroke="' + c + '" stroke-width="4" stroke-linecap="round"/>' +
-          bodice(c, d) +
-          '<rect x="130" y="244" width="40" height="9" fill="' + d + '"/>' +
-          '<circle cx="150" cy="248.5" r="4" fill="#ffe066" stroke="#d9a21b"/>' +
-          '<g fill="' + l + '">' + flower(150, 206, l, 3) + '</g>';
-      }
-    },
-    mermaid: {
-      front: function (c, g) {
-        var d = shade(c, -0.25), l = shade(c, 0.5), dots = '';
-        var pts = [[140, 200], [158, 212], [145, 232], [160, 250], [140, 272], [157, 292], [146, 318], [160, 340],
-          [142, 360], [154, 385], [120, 446], [150, 430], [180, 446], [135, 462], [165, 464]];
-        pts.forEach(function (p) { dots += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="2.2"/>'; });
-        return '<defs><linearGradient id="' + g + 'mm" x1="0" y1="0" x2="0" y2="1">' +
-          '<stop offset="0" stop-color="' + c + '"/><stop offset=".75" stop-color="' + shade(c, -0.12) + '"/>' +
-          '<stop offset="1" stop-color="' + l + '"/></linearGradient></defs>' +
-          '<path d="M127 176 Q150 188 173 176 L168 255 Q176 330 164 400 Q200 440 216 474 Q150 490 84 474 Q100 440 136 400 Q124 330 132 255Z" ' +
-          'fill="url(#' + g + 'mm)" stroke="' + d + '" stroke-width="2" stroke-linejoin="round"/>' +
-          '<path d="M136 400 Q150 410 164 400 M112 440 Q130 450 136 474 M188 440 Q170 450 164 474 M150 412 L150 480" stroke="' + d + '" stroke-width="1.5" fill="none" opacity=".45"/>' +
-          '<g fill="#fff" opacity=".7">' + dots + '</g>';
-      }
-    },
-    hanbok: {
-      front: function (c) {
-        var d = shade(c, -0.25), jeo = shade(c, 0.8), jd = shade(c, 0.3), go = shade(c, -0.4);
-        return '<path d="M118 205 Q72 330 58 468 Q150 490 242 468 Q228 330 182 205Z" fill="' + c + '" stroke="' + d + '" stroke-width="2" stroke-linejoin="round"/>' +
-          '<path d="M130 230 Q108 340 100 474 M150 216 L150 482 M170 230 Q192 340 200 474" stroke="' + d + '" stroke-width="1.5" fill="none" opacity=".4"/>' +
-          '<path d="M60 452 Q150 474 240 452" stroke="#ffe066" stroke-width="4" fill="none" opacity=".8"/>' +
-          '<path d="M127 180 Q104 232 94 292 L111 297 Q120 246 136 194Z" fill="' + jeo + '" stroke="' + jd + '" stroke-width="2" stroke-linejoin="round"/>' +
-          '<path d="M173 180 Q196 232 206 292 L189 297 Q180 246 164 194Z" fill="' + jeo + '" stroke="' + jd + '" stroke-width="2" stroke-linejoin="round"/>' +
-          '<path d="M95 285 L112 290 M96 278 L113 283" stroke="#ff6b6b" stroke-width="3"/>' +
-          '<path d="M205 285 L188 290 M204 278 L187 283" stroke="#5aaeff" stroke-width="3"/>' +
-          '<path d="M123 174 Q150 182 177 174 L183 212 Q150 220 117 212Z" fill="' + jeo + '" stroke="' + jd + '" stroke-width="2" stroke-linejoin="round"/>' +
-          '<path d="M136 176 L152 206 M164 176 L148 202" stroke="' + go + '" stroke-width="3.5" fill="none" stroke-linecap="round"/>' +
-          '<path d="M140 178 L150 196 L160 178" stroke="#fff" stroke-width="2" fill="none"/>' +
-          '<path d="M150 205 Q140 226 136 252 L144 253 Q147 230 153 207Z" fill="' + go + '"/>' +
-          '<path d="M152 205 Q157 228 160 248 L167 246 Q162 222 155 205Z" fill="' + go + '"/>' +
-          '<circle cx="151" cy="205" r="4.5" fill="' + go + '"/>';
-      }
-    },
-    fairy: {
-      back: function (c) {
-        var l = shade(c, 0.55);
-        return '<g opacity=".75" stroke="' + shade(c, 0.1) + '" stroke-width="2" fill="' + l + '">' +
-          '<path d="M140 200 Q76 120 62 186 Q60 238 140 226Z"/><path d="M160 200 Q224 120 238 186 Q240 238 160 226Z"/>' +
-          '<path d="M140 226 Q88 250 96 294 Q122 300 146 240Z"/><path d="M160 226 Q212 250 204 294 Q178 300 154 240Z"/></g>' +
-          '<g fill="#fff" opacity=".9"><circle cx="92" cy="180" r="3"/><circle cx="208" cy="180" r="3"/>' +
-          '<circle cx="110" cy="270" r="2"/><circle cx="190" cy="270" r="2"/></g>';
-      },
-      front: function (c) {
-        var d = shade(c, -0.2), l = shade(c, 0.5);
-        return '<path d="M132 248 L84 330 L100 322 L104 346 L120 330 L128 354 L142 336 L150 358 L158 336 L172 354 L180 330 L196 346 L200 322 L216 330 L168 248Z" fill="' + c + '" stroke="' + d + '" stroke-width="2" stroke-linejoin="round" opacity=".95"/>' +
-          '<path d="M134 248 L102 312 L116 308 L120 326 L134 314 L142 332 L150 316 L158 332 L166 314 L180 326 L184 308 L198 312 L166 248Z" fill="' + l + '" stroke="' + d + '" stroke-width="1.5" stroke-linejoin="round"/>' +
-          bodice(c, d) +
-          '<path d="M125 176 L132 190 L140 180 L150 192 L160 180 L168 190 L175 176" fill="' + l + '" stroke="' + d + '" stroke-width="1.5" stroke-linejoin="round"/>' +
-          '<g fill="#fff">' +
-          '<path d="' + starPath(118, 318, 4, 1.6) + '"/><path d="' + starPath(150, 300, 4.5, 1.8) + '"/>' +
-          '<path d="' + starPath(182, 318, 4, 1.6) + '"/><path d="' + starPath(150, 225, 5, 2) + '"/></g>';
-      }
-    }
-  };
+    // ---------------- 하의 ----------------
+    { id: 'bot_denim', slot: 'bottom', name: '청 미니스커트', draw: function (p) {
+      var c = '#4f86d1', st = '#ffd98a';
+      return '<defs>' + G(p + 'a', c) + '</defs>' +
+        P(sym([180, 362], [['L', 146, 362], ['Q', 137, 420, 121, 480], ['Q', 150, 492, 180, 492]]), fillAttr(p + 'a', c)) +
+        P(sym([180, 362], [['L', 146, 362], ['L', 144, 376], ['L', 180, 378]]), 'fill="' + shade(c, -0.12) + '" stroke="' + OUT(c) + '" stroke-width="1.2"') +
+        BOTH(line('M125 472 Q150 484 180 484', st, 1.3, 'stroke-dasharray="4 3"') + line('M150 382 Q156 398 172 394', st, 1.3, 'stroke-dasharray="4 3"') +
+          '<rect x="154" y="360" width="5" height="18" rx="1" fill="' + shade(c, -0.2) + '"/>') +
+        line('M180 378 L180 430 Q178 438 170 440', st, 1.3, 'stroke-dasharray="4 3"') +
+        '<circle cx="180" cy="370" r="4" fill="#ffd23f" stroke="#b58a00"/>' +
+        line('M140 440 L136 470 M220 440 L224 470', shade(c, 0.4), 2, 'opacity=".5"');
+    } },
+    { id: 'bot_plaid', slot: 'bottom', name: '체크 스커트', draw: function (p) {
+      var c = '#e8455a';
+      var pat = '<pattern id="' + p + 'pl" patternUnits="userSpaceOnUse" width="26" height="26"><rect width="26" height="26" fill="' + c + '"/>' +
+        '<rect y="10" width="26" height="6" fill="#a8182f" opacity=".7"/><rect x="10" width="6" height="26" fill="#a8182f" opacity=".7"/>' +
+        '<path d="M0 3 H26 M3 0 V26" stroke="#ffd35c" stroke-width="1.2" opacity=".85"/></pattern>';
+      var d = sym([180, 362], [['L', 146, 362], ['Q', 122, 430, 98, 502], ['Q', 140, 518, 180, 514]]);
+      return '<defs>' + pat + SH(p + 'sh') + '</defs>' +
+        P(d, 'fill="url(#' + p + 'pl)" stroke="#8a1025" stroke-width="1.6" stroke-linejoin="round"') + P(d, 'fill="url(#' + p + 'sh)"') +
+        BOTH(line('M156 372 L126 508 M166 372 L154 514 M150 370 L112 505', '#6a0a1a', 1.3, 'opacity=".4"')) +
+        P(sym([180, 360], [['L', 146, 360], ['L', 145, 372], ['L', 180, 374]]), 'fill="#2d2433" stroke="#000" stroke-width="1"') +
+        '<rect x="172" y="360" width="16" height="14" rx="2" fill="#ffd23f" stroke="#b58a00"/>';
+    } },
+    { id: 'bot_tutu', slot: 'bottom', name: '튤 스커트', draw: function (p) {
+      var c = '#ff9ccb';
+      return P(sym([180, 368], [['L', 148, 368], ['Q', 108, 420, 72, 478], ['Q', 128, 498, 180, 496]]), 'fill="' + shade(c, 0.45) + '" stroke="' + shade(c, -0.2) + '" stroke-width="1.2"') +
+        P(sym([180, 368], [['L', 148, 368], ['Q', 114, 416, 88, 456], ['Q', 134, 470, 180, 468]]), 'fill="' + shade(c, 0.15) + '" opacity=".85" stroke="' + shade(c, -0.2) + '" stroke-width="1.2"') +
+        P(sym([180, 368], [['L', 148, 368], ['Q', 124, 408, 106, 440], ['Q', 140, 452, 180, 450]]), 'fill="' + c + '" opacity=".9" stroke="' + shade(c, -0.25) + '" stroke-width="1.2"') +
+        BOTH(line('M150 380 Q128 420 110 440 M160 380 Q148 420 140 448 M152 390 Q120 440 90 460', '#fff', 1, 'opacity=".6"')) +
+        spark(120, 450, 5) + spark(236, 458, 5) + spark(160, 430, 4) + spark(205, 420, 4) + spark(96, 470, 3.5) +
+        P(sym([180, 360], [['L', 146, 360], ['L', 145, 374], ['L', 180, 376]]), 'fill="#fff" stroke="' + shade(c, -0.25) + '" stroke-width="1.2"') +
+        bow(200, 368, 8, '#ff5fae');
+    } },
+    { id: 'bot_jeans', slot: 'bottom', name: '청바지', draw: function (p) {
+      var c = '#3f6fb8', st = '#ffcf6b';
+      var leg = P('M146 362 L180 362 L181 494 C182 560 178 620 175 660 C176 720 176 780 173 826 L145 826 C140 760 132 700 135 650 C122 600 112 520 121 446 C126 420 138 390 146 362Z', fillAttr(p + 'a', c)) +
+        '<ellipse cx="156" cy="630" rx="12" ry="30" fill="#fff" opacity=".18"/>' +
+        line('M150 382 Q156 398 172 394', st, 1.3, 'stroke-dasharray="4 3"') +
+        line('M170 500 C172 600 166 700 166 820', st, 1.2, 'stroke-dasharray="4 3" opacity=".8"') +
+        P('M145 808 L173 810 L173 826 L145 826Z', 'fill="' + shade(c, 0.35) + '" stroke="' + OUT(c) + '" stroke-width="1.2"') +
+        '<rect x="152" y="360" width="5" height="18" rx="1" fill="' + shade(c, -0.2) + '"/>';
+      return '<defs>' + G(p + 'a', c) + '</defs>' + BOTH(leg) +
+        P(sym([180, 362], [['L', 146, 362], ['L', 144, 376], ['L', 180, 378]]), 'fill="' + shade(c, -0.12) + '" stroke="' + OUT(c) + '" stroke-width="1.2"') +
+        line('M180 378 L180 440 Q178 448 170 450', st, 1.3, 'stroke-dasharray="4 3"') +
+        '<circle cx="180" cy="370" r="4" fill="#ffd23f" stroke="#b58a00"/>';
+    } },
+    { id: 'bot_shorts', slot: 'bottom', name: '반바지', draw: function (p) {
+      var c = '#ffb13d';
+      var leg = P('M146 362 L180 362 L181 500 L182 518 L123 520 Q115 448 146 362Z', fillAttr(p + 'a', c)) +
+        P('M123 506 L182 504 L182 518 L123 520Z', 'fill="#fff" stroke="' + OUT(c) + '" stroke-width="1.2"') +
+        line('M150 382 Q156 398 172 394', OUT(c), 1.2);
+      return '<defs>' + G(p + 'a', c) + '</defs>' + BOTH(leg) +
+        P(sym([180, 360], [['L', 146, 360], ['L', 145, 374], ['L', 180, 376]]), 'fill="#fff" stroke="' + OUT(c) + '" stroke-width="1.2"') +
+        line('M180 376 L180 440', OUT(c), 1.2) + bow(180, 368, 7, '#ff5fae');
+    } },
+    { id: 'bot_long', slot: 'bottom', name: '롱 플리츠 스커트', draw: function (p) {
+      var c = '#86dcc0';
+      return '<defs>' + G(p + 'a', c) + '</defs>' +
+        P(sym([180, 362], [['L', 146, 362], ['Q', 120, 560, 106, 772], ['Q', 142, 786, 180, 784]]), fillAttr(p + 'a', c)) +
+        BOTH(line('M150 376 L124 776 M158 376 L142 780 M166 376 L160 782 M173 376 L172 784', shade(c, -0.3), 1.2, 'opacity=".45"')) +
+        P(sym([180, 360], [['L', 146, 360], ['L', 145, 376], ['L', 180, 378]]), 'fill="' + shade(c, -0.15) + '" stroke="' + OUT(c) + '" stroke-width="1.2"') +
+        flower(200, 368, 6, '#fff');
+    } },
 
-  // =====================================================================
-  //  신발
-  // =====================================================================
-  function feet(skin) {
-    var d = shade(skin, -0.18);
-    return '<g fill="' + skin + '" stroke="' + d + '" stroke-width="1.5">' +
-      '<ellipse cx="138" cy="480" rx="8" ry="5"/><ellipse cx="162" cy="480" rx="8" ry="5"/></g>';
-  }
-  var SHOES = {
-    heels: function (c) {
-      var d = shade(c, -0.3), l = shade(c, 0.5);
-      return '<g fill="' + c + '" stroke="' + d + '" stroke-width="1.5">' +
-        '<rect x="127" y="478" width="4" height="12"/><rect x="169" y="478" width="4" height="12"/>' +
-        '<ellipse cx="138" cy="480" rx="11" ry="6.5"/><ellipse cx="162" cy="480" rx="11" ry="6.5"/></g>' +
-        '<path d="M133 477 Q139 474 145 477 M155 477 Q161 474 167 477" stroke="' + l + '" stroke-width="2" fill="none"/>';
-    },
-    boots: function (c) {
-      var d = shade(c, -0.3), l = shade(c, 0.35);
-      return '<g fill="' + c + '" stroke="' + d + '" stroke-width="1.5">' +
-        '<rect x="131" y="434" width="15" height="46" rx="4"/><rect x="154" y="434" width="15" height="46" rx="4"/>' +
-        '<ellipse cx="137" cy="481" rx="11" ry="6.5"/><ellipse cx="163" cy="481" rx="11" ry="6.5"/></g>' +
-        '<g fill="' + l + '" stroke="' + d + '" stroke-width="1"><rect x="129" y="430" width="19" height="7" rx="3"/><rect x="152" y="430" width="19" height="7" rx="3"/></g>';
-    },
-    ribbon: function (c) {
-      var d = shade(c, -0.3), l = shade(c, 0.4);
-      return '<g fill="' + c + '" stroke="' + d + '" stroke-width="1.5">' +
-        '<ellipse cx="138" cy="481" rx="11" ry="6"/><ellipse cx="162" cy="481" rx="11" ry="6"/></g>' +
-        '<g fill="' + l + '" stroke="' + d + '" stroke-width="1">' +
-        '<path d="M138 476 L130 471 L130 481Z M138 476 L146 471 L146 481Z"/><circle cx="138" cy="476" r="2.5"/>' +
-        '<path d="M162 476 L154 471 L154 481Z M162 476 L170 471 L170 481Z"/><circle cx="162" cy="476" r="2.5"/></g>';
-    },
-    glass: function () {
-      return '<g fill="rgba(200,240,255,.75)" stroke="#7cc9f5" stroke-width="1.5">' +
-        '<rect x="127" y="478" width="4" height="12"/><rect x="169" y="478" width="4" height="12"/>' +
-        '<ellipse cx="138" cy="480" rx="11" ry="6.5"/><ellipse cx="162" cy="480" rx="11" ry="6.5"/></g>' +
-        '<g fill="#fff"><path d="' + starPath(144, 476, 4, 1.5) + '"/><path d="' + starPath(168, 476, 4, 1.5) + '"/></g>';
-    },
-    none: function () { return ''; }
-  };
-
-  // =====================================================================
-  //  목걸이, 머리장식, 소품
-  // =====================================================================
-  var NECK = {
-    pearl: function () {
-      var out = '';
-      for (var t = 0; t <= 8; t++) {
-        out += '<circle cx="' + (136 + t * 3.5).toFixed(1) + '" cy="' + (178 + Math.sin(Math.PI * t / 8) * 12).toFixed(1) +
-          '" r="2.7" fill="#fff" stroke="#d9cfe0" stroke-width="1"/>';
+    // ---------------- 드레스 ----------------
+    { id: 'dr_princess', slot: 'dress', name: '공주님 드레스', draw: function (p) {
+      var c = '#ff8cc6', l = shade(c, 0.5), lace = '', roses = '', sp = '';
+      for (var i = 0; i <= 14; i++) {
+        var q = qpt([40, 846], [108, 884], [180, 884], i / 14), q2 = [360 - q[0], q[1]];
+        lace += '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="9" fill="#fff" stroke="' + shade(c, -0.2) + '" stroke-width="1"/>';
+        lace += '<circle cx="' + q2[0].toFixed(1) + '" cy="' + q2[1].toFixed(1) + '" r="9" fill="#fff" stroke="' + shade(c, -0.2) + '" stroke-width="1"/>';
       }
-      return out;
-    },
-    heart: function () {
-      return '<path d="M136 178 Q150 198 164 178" stroke="#e6b422" stroke-width="1.3" fill="none"/>' +
-        '<path d="M150 203 C139 195 141 186 150 190 C159 186 161 195 150 203Z" fill="#ff3d7f" stroke="#c21f5b" stroke-width="1.2"/>' +
-        '<circle cx="146.5" cy="192.5" r="1.4" fill="#fff"/>';
-    },
-    choker: function () {
-      return '<rect x="140.5" y="164" width="19" height="6" rx="2" fill="#5b2a6e"/>' +
-        '<path d="M150 170 L145 176 L150 182 L155 176Z" fill="#ff6fae" stroke="#c21f5b" stroke-width="1"/>';
-    },
-    none: function () { return ''; }
-  };
+      [[90, 632], [130, 648], [180, 652], [230, 648], [270, 632]].forEach(function (r) { roses += rose(r[0], r[1], 8, '#ff5fa2'); });
+      [[110, 720], [150, 560], [210, 600], [250, 760], [140, 800], [200, 780], [170, 700], [120, 520], [240, 520]].forEach(function (s) { sp += spark(s[0], s[1], 6); });
+      return '<defs>' + G(p + 'a', c) + G(p + 'b', shade(c, -0.08)) + '</defs>' + lace +
+        P(sym([180, 368], [['L', 148, 368], ['C', 120, 470, 64, 650, 40, 846], ['Q', 108, 884, 180, 884]]), fillAttr(p + 'a', c)) +
+        BOTH(P('M150 380 C130 470 104 560 86 628 Q134 656 180 656 L180 380Z', 'fill="' + l + '" opacity=".55"')) +
+        BOTH(line('M156 400 C140 520 110 700 92 856 M168 400 C160 560 146 720 140 870', shade(c, -0.3), 1.2, 'opacity=".4"')) +
+        roses + sp +
+        P(sym([180, 298], [['Q', 164, 282, 129, 288], ['Q', 125, 330, 147, 372], ['Q', 164, 386, 180, 388]]), fillAttr(p + 'b', c)) +
+        beads([130, 290], [155, 283], [180, 298], 6, 3, '#fff', shade(c, -0.2)) + beads([230, 290], [205, 283], [180, 298], 6, 3, '#fff', shade(c, -0.2)) +
+        line('M150 300 L160 380 M210 300 L200 380', shade(c, -0.3), 1, 'opacity=".4"') +
+        BOTH(P('M127 262 Q97 260 97 292 Q99 314 118 314 Q133 310 135 292Z', 'fill="' + l + '" stroke="' + shade(c, -0.2) + '" stroke-width="1.4" opacity=".92"') +
+          line('M104 272 Q110 292 114 312 M118 266 Q122 288 126 310', shade(c, -0.15), 1, 'opacity=".6"')) +
+        bow(180, 380, 14, '#ff5fa2');
+    } },
+    { id: 'dr_mermaid', slot: 'dress', name: '인어 드레스', draw: function (p) {
+      var sc = '<pattern id="' + p + 'sc" patternUnits="userSpaceOnUse" width="16" height="12"><path d="M0 12 Q8 0 16 12" stroke="#fff" stroke-width="1.2" fill="none" opacity=".45"/></pattern>';
+      var d = sym([180, 288], [['Q', 160, 280, 130, 288], ['Q', 126, 330, 146, 372], ['Q', 130, 420, 124, 470], ['C', 126, 560, 140, 640, 150, 700],
+        ['C', 132, 770, 100, 830, 82, 874], ['Q', 140, 888, 180, 884]]);
+      return '<defs>' + VG(p + 'g', [[0, '#7fe6ff'], [0.45, '#5a8cff'], [0.75, '#8a6cff'], [1, '#e2a6ff']]) + sc + SH(p + 'sh') + '</defs>' +
+        BOTH(line('M150 290 L170 236', '#5a8cff', 3)) +
+        P(d, 'fill="url(#' + p + 'g)" stroke="#3a3f9f" stroke-width="1.6" stroke-linejoin="round"') + P(d, 'fill="url(#' + p + 'sc)"') + P(d, 'fill="url(#' + p + 'sh)"') +
+        BOTH(line('M150 700 Q140 780 110 870 M162 704 Q158 790 150 880', '#fff', 1.3, 'opacity=".5"')) +
+        beads([132, 290], [156, 282], [180, 290], 6, 2.8, '#fff', '#9ad') + beads([228, 290], [204, 282], [180, 290], 6, 2.8, '#fff', '#9ad') +
+        '<path d="M180 292 L170 304 Q180 314 190 304Z" fill="#ffd0e8" stroke="#d98ab8"/>' +
+        spark(160, 420, 6) + spark(206, 520, 6) + spark(170, 640, 5) + spark(130, 820, 6) + spark(230, 840, 6);
+    } },
+    { id: 'dr_party', slot: 'dress', name: '파티 드레스', draw: function (p) {
+      var c = '#3a2a55', gold = '#ffd23f', seq = '';
+      [[140, 420], [160, 450], [200, 440], [220, 470], [130, 480], [180, 490], [150, 505], [210, 500], [170, 430], [120, 500], [240, 500]].forEach(function (s) {
+        seq += '<circle cx="' + s[0] + '" cy="' + s[1] + '" r="2.3" fill="' + gold + '"/>';
+      });
+      return '<defs>' + G(p + 'a', c) + '</defs>' +
+        P(sym([180, 302], [['L', 164, 238], ['L', 154, 240], ['Q', 128, 288, 135, 330], ['Q', 141, 356, 148, 372], ['Q', 122, 440, 102, 530], ['Q', 140, 544, 180, 542]]), fillAttr(p + 'a', c)) +
+        seq +
+        P(sym([180, 366], [['L', 148, 366], ['L', 147, 380], ['L', 180, 382]]), 'fill="' + gold + '" stroke="#b58a00" stroke-width="1.2"') +
+        '<path d="M180 364 L172 373 L180 382 L188 373Z" fill="#ff4f7f" stroke="#fff"/>' +
+        line('M164 238 L180 302 L196 238', gold, 2) +
+        BOTH(line('M104 526 Q140 540 180 538', gold, 3)) +
+        spark(150, 330, 5, gold) + spark(212, 320, 4, gold);
+    } },
+    { id: 'dr_hanbok', slot: 'dress', name: '한복', draw: function (p) {
+      var chima = '#ff5d8f', jeo = '#ffe066', go = '#e0284f';
+      var stripes = ['#ff5d5d', '#ffb13d', '#ffe066', '#5fd07a', '#4f9cff', '#b07cff'], sl = '';
+      stripes.forEach(function (col, i) {
+        var y0 = 404 + i * 13;
+        sl += '<path d="M' + (92 - i * 0.2) + ' ' + y0 + ' L123 ' + (y0 - 2) + ' L122 ' + (y0 + 11) + ' L' + (91 - i * 0.2) + ' ' + (y0 + 13) + 'Z" fill="' + col + '"/>';
+      });
+      return '<defs>' + G(p + 'c', chima) + G(p + 'j', jeo) + '</defs>' +
+        P(sym([180, 316], [['L', 140, 316], ['C', 120, 460, 76, 680, 58, 864], ['Q', 120, 888, 180, 888]]), fillAttr(p + 'c', chima)) +
+        BOTH(line('M150 330 C136 500 110 700 100 876 M166 330 C160 520 152 720 150 886', shade(chima, -0.3), 1.2, 'opacity=".4"') +
+          line('M64 830 Q120 856 180 858', '#ffd23f', 5, 'opacity=".9"') + flower(110, 842, 4, '#ffd23f', '#fff') + flower(150, 852, 4, '#ffd23f', '#fff')) +
+        BOTH(P('M127 249 Q99 255 98 300 L91 400 Q86 452 89 494 L118 497 Q121 452 124 402 L132 318 Q134 288 135 268Z', fillAttr(p + 'j', jeo)) + sl +
+          P('M89 482 L118 485 L118 497 L89 494Z', 'fill="#fff" stroke="' + OUT(jeo) + '" stroke-width="1"')) +
+        P(sym([180, 300], [['L', 166, 238], ['Q', 146, 246, 126, 252], ['Q', 120, 284, 128, 322], ['Q', 150, 332, 180, 330]]), fillAttr(p + 'j', jeo)) +
+        line('M163 238 L196 300', '#7a3fb0', 6) + line('M197 238 L184 262', '#7a3fb0', 6) +
+        line('M164 239 L176 262', '#fff', 2.5) + line('M196 239 L188 254', '#fff', 2.5) +
+        P('M188 300 Q182 340 176 390 L184 392 Q190 346 195 302Z', 'fill="' + go + '"') +
+        P('M191 300 Q199 336 202 376 L209 374 Q206 332 197 300Z', 'fill="' + go + '"') +
+        '<circle cx="192" cy="301" r="6" fill="' + go + '"/>';
+    } },
+    { id: 'dr_sun', slot: 'dress', name: '꽃무늬 원피스', draw: function (p) {
+      var c = '#ffe066';
+      var pat = '<pattern id="' + p + 'fl" patternUnits="userSpaceOnUse" width="34" height="34"><rect width="34" height="34" fill="' + c + '"/>' +
+        flower(9, 9, 3.5, '#fff', '#ff8a3d') + flower(26, 26, 3.5, '#ffb3d1', '#fff') + '</pattern>';
+      var d = sym([180, 292], [['Q', 160, 284, 131, 290], ['Q', 125, 330, 146, 372], ['Q', 118, 460, 98, 566], ['Q', 140, 582, 180, 580]]);
+      return '<defs>' + pat + SH(p + 'sh') + '</defs>' +
+        BOTH(line('M146 292 L156 242', '#ff9f3d', 4)) +
+        frill(98, 262, 566, 12, 7, '#fff', '#e0b000') +
+        P(d, 'fill="url(#' + p + 'fl)" stroke="#c09000" stroke-width="1.6" stroke-linejoin="round"') + P(d, 'fill="url(#' + p + 'sh)"') +
+        P(sym([180, 366], [['L', 148, 366], ['L', 147, 378], ['L', 180, 380]]), 'fill="#fff" stroke="#e0b000" stroke-width="1.2"') +
+        bow(180, 372, 11, '#ff9f3d');
+    } },
+    { id: 'dr_snow', slot: 'dress', name: '눈꽃 드레스', back: function (p) {
+      return '<defs>' + VG(p + 'cp', [[0, '#e8f8ff', 0.9], [1, '#9fd8ff', 0.7]]) + '</defs>' +
+        P(sym([180, 240], [['L', 150, 244], ['Q', 104, 250, 92, 290], ['C', 70, 480, 58, 680, 36, 884], ['Q', 110, 900, 180, 896]]),
+          'fill="url(#' + p + 'cp)" stroke="#8fc8ee" stroke-width="1.4"') +
+        snowflake(70, 700, 9, '#fff') + snowflake(290, 740, 9, '#fff') + snowflake(80, 820, 7, '#fff') + snowflake(284, 600, 7, '#fff');
+    }, draw: function (p) {
+      var c = '#a9ddff';
+      return '<defs>' + VG(p + 'g', [[0, '#d8f2ff'], [0.5, c], [1, '#e9f7ff']]) + G(p + 'b', '#8fcfff') + '</defs>' +
+        P(sym([180, 370], [['L', 148, 370], ['C', 128, 480, 90, 680, 70, 868], ['Q', 120, 888, 180, 888]]), 'fill="url(#' + p + 'g)" stroke="#5aa5d8" stroke-width="1.6" stroke-linejoin="round"') +
+        BOTH(line('M156 390 C140 560 110 720 96 880 M168 390 C160 560 150 740 148 886', '#5aa5d8', 1.2, 'opacity=".4"')) +
+        snowflake(130, 600, 10, '#fff') + snowflake(220, 680, 12, '#fff') + snowflake(160, 800, 9, '#fff') + snowflake(250, 820, 8, '#fff') + snowflake(110, 760, 8, '#fff') +
+        spark(190, 520, 6) + spark(150, 460, 5) +
+        P(sym([180, 294], [['Q', 160, 282, 129, 288], ['Q', 125, 330, 147, 372], ['Q', 164, 386, 180, 388]]), fillAttr(p + 'b', '#8fcfff')) +
+        beads([132, 290], [156, 282], [180, 294], 6, 2.8, '#fff', '#8fc8ee') + beads([228, 290], [204, 282], [180, 294], 6, 2.8, '#fff', '#8fc8ee') +
+        snowflake(180, 330, 10, '#fff') +
+        BOTH(P(SLEEVE_LONG, 'fill="#e8f8ff" opacity=".5" stroke="#9fd0f0" stroke-width="1.2"'));
+    } },
 
-  var GOLD = '#ffd447', GOLD_D = '#d9a21b';
-  var CROWN = {
-    tiara: function () {
-      return '<path d="M110 80 Q150 66 190 80 L184 70 L174 66 L170 56 L160 64 L150 44 L140 64 L130 56 L126 66 L116 70Z" fill="' + GOLD + '" stroke="' + GOLD_D + '" stroke-width="1.5" stroke-linejoin="round"/>' +
-        '<circle cx="150" cy="62" r="4.5" fill="#ff5fa2" stroke="#fff" stroke-width="1"/>' +
-        '<circle cx="131" cy="68" r="2.8" fill="#7ecbff"/><circle cx="169" cy="68" r="2.8" fill="#7ecbff"/>' +
-        '<circle cx="150" cy="44" r="2.5" fill="#fff"/>';
-    },
-    crown: function () {
-      return '<path d="M116 70 L112 28 L132 48 L150 18 L168 48 L188 28 L184 70 Q150 60 116 70Z" fill="' + GOLD + '" stroke="' + GOLD_D + '" stroke-width="2" stroke-linejoin="round"/>' +
-        '<path d="M115 70 Q150 60 185 70 L186 79 Q150 69 114 79Z" fill="#f6c02c" stroke="' + GOLD_D + '" stroke-width="1.5"/>' +
-        '<g fill="#fff" stroke="' + GOLD_D + '"><circle cx="112" cy="27" r="4"/><circle cx="150" cy="17" r="4.5"/><circle cx="188" cy="27" r="4"/></g>' +
-        '<path d="M150 38 L143 48 L150 58 L157 48Z" fill="#ff4f7f" stroke="#fff" stroke-width="1"/>' +
-        '<circle cx="128" cy="58" r="4" fill="#5aaeff" stroke="#fff"/><circle cx="172" cy="58" r="4" fill="#5aaeff" stroke="#fff"/>' +
-        '<g fill="#b07cff"><circle cx="132" cy="73" r="2.5"/><circle cx="150" cy="70" r="2.5"/><circle cx="168" cy="73" r="2.5"/></g>';
-    },
-    bow: function () {
-      return '<g fill="#ff6fae" stroke="#d6437f" stroke-width="1.5" stroke-linejoin="round">' +
-        '<path d="M184 74 L190 102 L196 98Z"/><path d="M184 74 L178 104 L173 98Z"/>' +
-        '<path d="M184 74 L162 58 Q158 74 164 90Z"/><path d="M184 74 L206 58 Q210 74 204 90Z"/></g>' +
-        '<circle cx="184" cy="74" r="6.5" fill="#ff9cc9" stroke="#d6437f" stroke-width="1.5"/>';
-    },
-    flower: function () {
-      var cols = ['#ff8fc7', '#fff27a', '#b5a1ff', '#ffffff', '#ff8fc7', '#fff27a', '#b5a1ff'];
-      var out = '', leaves = '';
-      for (var i = 0; i < 7; i++) {
-        var a = Math.PI * (1.15 + i * 0.7 / 6);
-        var x = 150 + Math.cos(a) * 50, y = 112 + Math.sin(a) * 50;
-        leaves += '<ellipse cx="' + (x + 5).toFixed(1) + '" cy="' + (y + 3).toFixed(1) + '" rx="6" ry="3" fill="#6cc46f"/>';
-        out += flower(+x.toFixed(1), +y.toFixed(1), cols[i], 4.5);
+    // ---------------- 겉옷 ----------------
+    { id: 'out_cardigan', slot: 'outer', name: '가디건', draw: function (p) {
+      var c = '#ff9fc9';
+      return '<defs>' + G(p + 'a', c) + '</defs>' +
+        BOTH(P(SLEEVE_LONG, fillAttr(p + 'a', c)) + P('M90 484 L115 486 L115 499 L90 497Z', 'fill="' + shade(c, -0.15) + '" stroke="' + OUT(c) + '" stroke-width="1.2"') +
+          P('M166 238 Q146 246 124 252 Q118 284 126 318 Q132 360 132 404 L160 406 Q162 330 168 250Z', fillAttr(p + 'a', c)) +
+          P('M132 394 L160 396 L160 406 L132 404Z', 'fill="' + shade(c, -0.15) + '" stroke="' + OUT(c) + '" stroke-width="1.2"') +
+          line('M166 240 Q162 320 160 404', shade(c, -0.15), 5) +
+          '<rect x="138" y="352" width="16" height="16" rx="3" fill="none" stroke="' + OUT(c) + '" stroke-width="1.2"/>') +
+        '<g fill="#fff" stroke="' + OUT(c) + '"><circle cx="166" cy="280" r="3"/><circle cx="165" cy="312" r="3"/><circle cx="163" cy="344" r="3"/><circle cx="162" cy="376" r="3"/></g>';
+    } },
+    { id: 'out_denim', slot: 'outer', name: '청재킷', draw: function (p) {
+      var c = '#5b8fd6', st = '#ffd98a';
+      return '<defs>' + G(p + 'a', c) + '</defs>' +
+        BOTH(P('M127 249 Q99 255 98 300 L94 420 L119 423 L132 318 Q134 288 135 268Z', fillAttr(p + 'a', c)) +
+          P('M93 410 L120 413 L119 428 L93 425Z', 'fill="' + shade(c, 0.2) + '" stroke="' + OUT(c) + '" stroke-width="1.2"') +
+          P('M166 238 Q146 246 124 252 Q118 284 126 318 Q132 340 134 358 L168 360 Q166 300 170 250Z', fillAttr(p + 'a', c)) +
+          P('M166 238 Q150 250 146 262 L158 286 L170 252Z', 'fill="' + shade(c, -0.15) + '" stroke="' + OUT(c) + '" stroke-width="1.2"') +
+          '<rect x="138" y="292" width="20" height="18" rx="2" fill="none" stroke="' + st + '" stroke-width="1.2" stroke-dasharray="3 2"/>' +
+          P('M137 290 L159 290 L158 300 L148 304 L137 300Z', 'fill="' + shade(c, -0.1) + '" stroke="' + OUT(c) + '" stroke-width="1"') +
+          line('M134 346 L168 348', st, 1.2, 'stroke-dasharray="3 2"') + line('M166 252 L166 356', st, 1.2, 'stroke-dasharray="3 2"')) +
+        '<g fill="#ffd23f" stroke="#b58a00"><circle cx="168" cy="300" r="2.5"/><circle cx="168" cy="330" r="2.5"/></g>';
+    } },
+    { id: 'out_cape', slot: 'outer', name: '공주 망토', back: function (p) {
+      var c = '#c8243f';
+      return '<defs>' + G(p + 'cb', shade(c, -0.15)) + '</defs>' +
+        P(sym([180, 236], [['L', 150, 240], ['Q', 100, 250, 86, 300], ['C', 70, 500, 60, 700, 54, 866], ['Q', 120, 884, 180, 880]]), fillAttr(p + 'cb', c)) +
+        BOTH(line('M58 858 Q120 876 180 872', '#ffd23f', 4));
+    }, draw: function (p) {
+      var c = '#d9304f', fur = '';
+      for (var i = 0; i <= 8; i++) {
+        var q = qpt([124, 256], [150, 244], [178, 244], i / 8);
+        fur += '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="7" fill="#fff" stroke="#ddd" stroke-width=".8"/>';
+        fur += '<circle cx="' + (360 - q[0]).toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="7" fill="#fff" stroke="#ddd" stroke-width=".8"/>';
+      }
+      return '<defs>' + G(p + 'a', c) + '</defs>' +
+        BOTH(P('M172 238 Q134 244 112 262 Q92 290 92 334 Q112 326 124 310 Q148 276 176 254Z', fillAttr(p + 'a', c)) +
+          line('M94 330 Q110 322 122 308', '#ffd23f', 3)) +
+        fur + '<circle cx="180" cy="258" r="9" fill="#ffd23f" stroke="#b58a00" stroke-width="1.5"/>' +
+        '<path d="' + starPath(180, 258, 6, 2.5) + '" fill="#ff4f7f"/>';
+    } },
+
+    // ---------------- 양말 ----------------
+    { id: 'sock_knee', slot: 'socks', name: '레이스 양말', draw: function (p) {
+      var sock = P('M135 612 L176 612 C177 700 170 780 168 840 Q159 846 150 840 C142 770 133 700 135 612Z', 'fill="#fff" stroke="#c9bcd0" stroke-width="1.3"') +
+        frill(132, 179, 614, 5, 5, '#ffd1e6', '#e79bc0') + bow(142, 618, 5, '#ff6fae');
+      return BOTH(sock);
+    } },
+    { id: 'sock_tights', slot: 'socks', name: '줄무늬 타이즈', draw: function (p) {
+      var pat = '<pattern id="' + p + 'tt" patternUnits="userSpaceOnUse" width="20" height="16"><rect width="20" height="16" fill="#b58cff"/><rect y="8" width="20" height="8" fill="#fff"/></pattern>';
+      var leg = 'M124 470 C114 530 128 600 138 645 C134 700 140 760 148 840 Q159 846 170 840 C170 780 178 720 174 645 C180 600 184 540 183 494 L180 470Z';
+      return '<defs>' + pat + SH(p + 'sh') + '</defs>' +
+        BOTH(P(leg, 'fill="url(#' + p + 'tt)" stroke="#7a52c7" stroke-width="1.3"') + P(leg, 'fill="url(#' + p + 'sh)"'));
+    } },
+
+    // ---------------- 신발 ----------------
+    { id: 'sh_red', slot: 'shoes', name: '빨간 구두', draw: function (p) {
+      var c = '#e8283f';
+      return '<defs>' + G(p + 'a', c) + '</defs>' +
+        BOTH(P('M147 866 L143 884 L149 884 L152 870Z', 'fill="#7a0a1a"') +
+          P('M146 846 Q143 866 149 876 Q160 884 172 875 Q175 858 171 842 Q160 852 146 846Z', fillAttr(p + 'a', c)) +
+          '<ellipse cx="154" cy="866" rx="3" ry="6" fill="#fff" opacity=".6"/>' + bow(159, 850, 4, '#ffd1dc'));
+    } },
+    { id: 'sh_glass', slot: 'shoes', name: '유리구두', draw: function (p) {
+      return BOTH(P('M147 866 L143 884 L149 884 L152 870Z', 'fill="#bfeaff" stroke="#7fc8f0"') +
+        P('M146 846 Q143 866 149 876 Q160 884 172 875 Q175 858 171 842 Q160 852 146 846Z', 'fill="#e3f7ff" fill-opacity=".75" stroke="#6fbfee" stroke-width="1.6"') +
+        spark(165, 858, 5) + spark(152, 870, 3));
+    } },
+    { id: 'sh_boots', slot: 'shoes', name: '롱부츠', draw: function (p) {
+      var c = '#9a5a34';
+      return '<defs>' + G(p + 'a', c) + '</defs>' +
+        BOTH(P('M137 650 L175 650 C176 720 172 790 172 842 Q175 862 171 876 Q159 886 148 876 Q142 860 146 842 C140 780 135 720 137 650Z', fillAttr(p + 'a', c)) +
+          P('M133 640 L179 640 L177 664 L135 664Z', 'fill="' + shade(c, 0.25) + '" stroke="' + OUT(c) + '" stroke-width="1.3"') +
+          P('M142 800 L172 800 L172 810 L142 810Z', 'fill="' + shade(c, -0.25) + '"') + '<rect x="154" y="799" width="8" height="12" fill="none" stroke="#ffd23f" stroke-width="2"/>' +
+          line('M158 670 L158 790', shade(c, 0.3), 1.2, 'stroke-dasharray="4 3"'));
+    } },
+    { id: 'sh_sneakers', slot: 'shoes', name: '운동화', draw: function (p) {
+      var c = '#ffffff';
+      return '<defs>' + G(p + 'a', c) + '</defs>' +
+        BOTH(P('M145 836 Q139 868 148 878 Q161 886 175 878 Q179 862 173 834Z', fillAttr(p + 'a', '#d9d0e6')) +
+          P('M142 868 Q160 876 177 868 L176 879 Q160 889 144 880Z', 'fill="#ff6fae" stroke="#c2188a" stroke-width="1.2"') +
+          line('M150 846 L168 842 M150 854 L169 850 M150 862 L170 858', '#ff6fae', 2) +
+          P(starPath(160, 870, 4, 1.6), 'fill="#fff"'));
+    } },
+    { id: 'sh_sandal', slot: 'shoes', name: '리본 샌들', draw: function (p) {
+      var c = '#ffc94d';
+      return BOTH(P('M146 866 Q160 876 172 866 L172 876 Q160 884 146 876Z', 'fill="#ff8fc8" stroke="#c2188a" stroke-width="1.2"') +
+        line('M149 852 L170 842 M149 842 L170 856 M151 824 L168 814 M151 814 L168 826 M151 804 L168 800', c, 3) +
+        bow(159, 800, 5, '#ff6fae'));
+    } },
+    { id: 'sh_mary', slot: 'shoes', name: '메리제인', draw: function (p) {
+      var c = '#2d2433';
+      return '<defs>' + G(p + 'a', c) + '</defs>' +
+        BOTH(P('M146 846 Q143 866 149 876 Q160 884 172 875 Q175 858 171 842 Q160 852 146 846Z', fillAttr(p + 'a', c)) +
+          line('M147 840 L171 834', c, 3.5) + '<circle cx="167" cy="835" r="2.5" fill="#ffd23f"/>' +
+          '<ellipse cx="154" cy="866" rx="3" ry="6" fill="#fff" opacity=".4"/>');
+    } },
+
+    // ---------------- 가방 (오른손) ----------------
+    { id: 'bag_red', slot: 'bag', name: '핸드백', draw: function (p) {
+      var c = '#e8283f';
+      return '<defs>' + G(p + 'a', c) + '</defs>' +
+        line('M238 552 Q258 496 278 552', shade(c, -0.35), 4) +
+        P('M230 550 Q226 600 236 614 L280 614 Q290 600 286 550Z', fillAttr(p + 'a', c)) +
+        P('M230 550 L286 550 L284 574 Q258 588 232 574Z', 'fill="' + shade(c, -0.18) + '" stroke="' + OUT(c) + '" stroke-width="1.4"') +
+        '<circle cx="258" cy="580" r="5" fill="#ffd23f" stroke="#b58a00"/>' + '<ellipse cx="242" cy="598" rx="3" ry="8" fill="#fff" opacity=".4"/>';
+    } },
+    { id: 'bag_heart', slot: 'bag', name: '하트 가방', draw: function (p) {
+      return line('M256 520 L240 574 M260 520 L276 574', '#ffd23f', 2, 'stroke-dasharray="3 2"') +
+        '<defs>' + G(p + 'a', '#ff8fc8') + '</defs>' +
+        '<path d="M258 632 C220 606 224 568 244 568 C252 568 256 574 258 580 C260 574 264 568 272 568 C292 568 296 606 258 632Z" ' + fillAttr(p + 'a', '#ff8fc8') + '/>' +
+        spark(248, 584, 5) + heart(258, 600, 7, '#fff');
+    } },
+    { id: 'bag_basket', slot: 'bag', name: '꽃바구니', draw: function (p) {
+      var c = '#d9a45b';
+      return line('M236 566 Q258 500 280 566', shade(c, -0.3), 4) +
+        flower(242, 560, 6, '#ff8fc7') + flower(258, 552, 6, '#fff') + flower(274, 560, 6, '#b5a1ff') +
+        '<defs>' + G(p + 'a', c) + '</defs>' +
+        P('M230 566 L286 566 L278 614 Q258 622 238 614Z', fillAttr(p + 'a', c)) +
+        line('M234 580 L282 580 M236 594 L280 594 M238 606 L278 606 M246 568 L248 616 M258 568 L258 618 M270 568 L268 616', shade(c, -0.3), 1, 'opacity=".6"');
+    } },
+
+    // ---------------- 손에 드는 것 (왼손) ----------------
+    { id: 'hand_wand', slot: 'hand', name: '요술봉', draw: function (p) {
+      return line('M100 530 L64 408', '#b98cff', 5) + line('M100 530 L64 408', '#fff', 1.5, 'opacity=".6"') +
+        line('M66 414 Q48 424 52 446 M68 416 Q60 440 70 456', '#ff8fc8', 2.5) +
+        P(starPath(60, 394, 22, 10), 'fill="#ffe066" stroke="#e0a000" stroke-width="2" stroke-linejoin="round"') +
+        P(starPath(60, 396, 10, 4.5), 'fill="#fff8c0"') +
+        spark(28, 370, 7) + spark(92, 366, 5) + spark(36, 420, 4);
+    } },
+    { id: 'hand_bouquet', slot: 'hand', name: '꽃다발', draw: function (p) {
+      return '<ellipse cx="78" cy="470" rx="12" ry="5" fill="#5fc46a" transform="rotate(-30 78 470)"/><ellipse cx="122" cy="470" rx="12" ry="5" fill="#5fc46a" transform="rotate(30 122 470)"/>' +
+        rose(86, 458, 10, '#ff5fa2') + rose(108, 452, 10, '#ff8fc7') + flower(96, 440, 7, '#fff') + rose(118, 470, 9, '#ff5fa2') + flower(80, 476, 6, '#b5a1ff') +
+        '<defs>' + G(p + 'a', '#fff3d1') + '</defs>' +
+        P('M100 544 L76 478 L124 476Z', fillAttr(p + 'a', '#e6c46a')) + bow(100, 510, 8, '#ff5fae');
+    } },
+    { id: 'hand_balloon', slot: 'hand', name: '하트 풍선', draw: function (p) {
+      return line('M102 522 Q86 420 70 268', '#fff', 1.5) +
+        '<defs>' + G(p + 'a', '#ff4f7f') + '</defs>' +
+        '<path d="M70 270 C20 238 24 186 50 186 C60 186 68 194 70 202 C72 194 80 186 90 186 C116 186 120 238 70 270Z" ' + fillAttr(p + 'a', '#ff4f7f') + '/>' +
+        '<ellipse cx="50" cy="206" rx="6" ry="10" fill="#fff" opacity=".5" transform="rotate(-20 50 206)"/>' +
+        '<path d="M66 270 L74 270 L70 278Z" fill="#c21f5b"/>';
+    } },
+
+    // ---------------- 머리 장식 ----------------
+    { id: 'hd_tiara', slot: 'head', name: '티아라', draw: function (p) {
+      var g = '#ffd447', gd = '#c98f00';
+      return '<defs>' + G(p + 'a', g) + '</defs>' +
+        P('M130 78 Q180 56 230 78 L226 70 L214 66 L208 44 L200 62 L190 36 L180 18 L170 36 L160 62 L152 44 L146 66 L134 70Z', fillAttr(p + 'a', g, 1.5)) +
+        '<path d="' + starPath(180, 44, 9, 4) + '" fill="#fff"/>' +
+        '<circle cx="180" cy="62" r="6" fill="#ff4f9a" stroke="#fff" stroke-width="1.5"/>' +
+        '<circle cx="152" cy="64" r="3.5" fill="#6fd0ff" stroke="#fff"/><circle cx="208" cy="64" r="3.5" fill="#6fd0ff" stroke="#fff"/>' +
+        spark(214, 30, 6) + line('M136 72 Q180 56 224 72', gd, 1, 'opacity=".5"');
+    } },
+    { id: 'hd_crown', slot: 'head', name: '왕관', draw: function (p) {
+      var g = '#ffd447';
+      return '<defs>' + G(p + 'a', g) + '</defs>' +
+        P('M136 62 L128 12 L156 38 L180 0 L204 38 L232 12 L224 62 Q180 50 136 62Z', fillAttr(p + 'a', g, 2)) +
+        P('M134 62 Q180 50 226 62 L226 76 Q180 64 134 76Z', 'fill="#f0b400" stroke="#c98f00" stroke-width="1.5"') +
+        '<g fill="#fff" stroke="#c98f00"><circle cx="128" cy="10" r="5"/><circle cx="180" cy="-2" r="6"/><circle cx="232" cy="10" r="5"/></g>' +
+        '<path d="M180 22 L170 36 L180 50 L190 36Z" fill="#ff2f6f" stroke="#fff" stroke-width="1.5"/>' +
+        '<circle cx="150" cy="48" r="5" fill="#4f9cff" stroke="#fff"/><circle cx="210" cy="48" r="5" fill="#4f9cff" stroke="#fff"/>' +
+        beads([140, 70], [180, 58], [220, 70], 8, 2.4, '#fff', '#ddd');
+    } },
+    { id: 'hd_bow', slot: 'head', name: '큰 리본', draw: function (p) {
+      return bow(218, 58, 22, '#ff4f9a') + '<g fill="#fff" opacity=".8"><circle cx="196" cy="50" r="3"/><circle cx="204" cy="66" r="3"/><circle cx="236" cy="48" r="3"/><circle cx="242" cy="64" r="3"/></g>';
+    } },
+    { id: 'hd_flower', slot: 'head', name: '꽃관', draw: function (p) {
+      var cols = ['#ff8fc7', '#fff', '#b5a1ff', '#ff5fa2', '#fff27a', '#b5a1ff', '#fff', '#ff8fc7'], out = '', leaves = '';
+      for (var i = 0; i < 8; i++) {
+        var a = Math.PI * (1.12 + i * 0.76 / 7), x = 180 + Math.cos(a) * 64, y = 128 + Math.sin(a) * 76;
+        leaves += '<ellipse cx="' + (x + 7).toFixed(1) + '" cy="' + (y + 4).toFixed(1) + '" rx="8" ry="3.5" fill="#5fc46a" transform="rotate(' + (i * 20 - 70) + ' ' + (x + 7).toFixed(1) + ' ' + (y + 4).toFixed(1) + ')"/>';
+        out += (i % 2 ? rose(+x.toFixed(1), +y.toFixed(1), 8, cols[i]) : flower(+x.toFixed(1), +y.toFixed(1), 6, cols[i]));
       }
       return leaves + out;
-    },
-    none: function () { return ''; }
-  };
+    } },
+    { id: 'hd_hat', slot: 'head', name: '밀짚모자', draw: function (p) {
+      var c = '#f2d38a';
+      return '<defs>' + G(p + 'a', c) + '</defs>' +
+        '<ellipse cx="180" cy="60" rx="100" ry="24" ' + fillAttr(p + 'a', c) + '/>' +
+        P('M128 60 Q128 6 180 4 Q232 6 232 60 Q180 70 128 60Z', fillAttr(p + 'a', c)) +
+        P('M129 44 Q180 34 231 44 L232 58 Q180 68 128 58Z', 'fill="#ff6fae" stroke="#c2188a" stroke-width="1.2"') +
+        flower(214, 50, 7, '#fff') + flower(200, 56, 5, '#ffd1e6') +
+        line('M100 64 Q180 80 260 64', shade(c, -0.3), 1, 'opacity=".5"');
+    } },
 
-  var ITEM = {
-    wand: function () {
-      return '<line x1="200" y1="302" x2="228" y2="238" stroke="#b98cff" stroke-width="5" stroke-linecap="round"/>' +
-        '<path d="' + starPath(231, 228, 15, 6.5) + '" fill="#ffe066" stroke="#f2b400" stroke-width="1.5" stroke-linejoin="round"/>' +
-        '<g fill="#ffe066"><path d="' + starPath(256, 212, 5, 2) + '"/><path d="' + starPath(214, 204, 4, 1.6) + '"/><path d="' + starPath(252, 246, 3.5, 1.4) + '"/></g>';
-    },
-    fan: function () {
-      var ribs = '';
-      for (var i = 0; i <= 6; i++) {
-        var a = (-120 + i * 80 / 6) * Math.PI / 180;
-        ribs += 'M200 302 L' + (200 + 55 * Math.cos(a)).toFixed(1) + ' ' + (302 + 55 * Math.sin(a)).toFixed(1) + ' ';
-      }
-      return '<path d="M200 302 L172.5 254.4 A55 55 0 0 1 242.1 266.6 Z" fill="#ffe1ef" stroke="#e05a93" stroke-width="2" stroke-linejoin="round"/>' +
-        '<path d="' + ribs + '" stroke="#f0a6c8" stroke-width="1.2"/>' +
-        flower(200, 262, '#ff8fc7', 4) + flower(222, 270, '#b5a1ff', 3);
-    },
-    bouquet: function () {
-      return '<g fill="#6cc46f"><ellipse cx="186" cy="262" rx="9" ry="4" transform="rotate(-30 186 262)"/><ellipse cx="224" cy="262" rx="9" ry="4" transform="rotate(30 224 262)"/></g>' +
-        flower(192, 256, '#ff8fc7', 5) + flower(208, 247, '#ffffff', 5) + flower(220, 258, '#ff6b6b', 5) +
-        flower(202, 266, '#b5a1ff', 4.5) + flower(214, 270, '#fff27a', 4) +
-        '<path d="M198 308 L184 268 L226 266Z" fill="#fff0c2" stroke="#e6c46a" stroke-width="1.5" stroke-linejoin="round"/>' +
-        '<path d="M196 290 L210 290" stroke="#ff6fae" stroke-width="4" stroke-linecap="round"/>';
-    },
-    parasol: function () {
-      return '<line x1="200" y1="302" x2="238" y2="118" stroke="#a0668a" stroke-width="3"/>' +
-        '<path d="M200 302 Q197 314 190 311" stroke="#a0668a" stroke-width="3" fill="none" stroke-linecap="round"/>' +
-        '<path d="M190 168 Q238 98 286 168 Q274 160 262 168 Q250 160 238 168 Q226 160 214 168 Q202 160 190 168Z" fill="#ffc2dd" stroke="#e06a9f" stroke-width="2" stroke-linejoin="round"/>' +
-        '<path d="M238 122 Q226 140 214 168 M238 122 Q250 140 262 168" stroke="#e06a9f" stroke-width="1.5" fill="none"/>' +
-        '<circle cx="238" cy="118" r="3" fill="#e06a9f"/>';
-    },
-    none: function () { return ''; }
-  };
+    // ---------------- 목걸이 ----------------
+    { id: 'nk_pearl', slot: 'necklace', name: '진주 목걸이', draw: function () {
+      return beads([165, 236], [180, 290], [195, 236], 14, 3.3, '#fff', '#cfc5d8') + '<circle cx="180" cy="266" r="5" fill="#fff" stroke="#cfc5d8"/>';
+    } },
+    { id: 'nk_heart', slot: 'necklace', name: '하트 목걸이', draw: function () {
+      return line('M165 236 Q180 290 195 236', '#e6b422', 1.4) + heart(180, 270, 11, '#ff3d7f', '#c21f5b', 1.4) + '<circle cx="175" cy="266" r="2" fill="#fff"/>';
+    } },
+    { id: 'nk_star', slot: 'necklace', name: '별 초커', draw: function () {
+      return P('M166 220 Q180 226 194 220 L194 229 Q180 235 166 229Z', 'fill="#6a2a8e" stroke="#40145a" stroke-width="1"') +
+        P(starPath(180, 242, 10, 4.5), 'fill="#ffd447" stroke="#c98f00" stroke-width="1.2"');
+    } },
+
+    // ---------------- 안경 ----------------
+    { id: 'gl_round', slot: 'glasses', name: '동그란 안경', draw: function () {
+      return '<g fill="rgba(255,255,255,.18)" stroke="#c9942f" stroke-width="2.6"><circle cx="155" cy="150" r="20"/><circle cx="205" cy="150" r="20"/></g>' +
+        line('M175 146 Q180 140 185 146 M135 146 L126 142 M225 146 L234 142', '#c9942f', 2.6) +
+        line('M144 138 L150 134', '#fff', 2);
+    } },
+    { id: 'gl_heart', slot: 'glasses', name: '하트 선글라스', draw: function () {
+      return heart(155, 150, 20, 'rgba(255,80,150,.6)', '#d61f6f', 2.6) + heart(205, 150, 20, 'rgba(255,80,150,.6)', '#d61f6f', 2.6) +
+        line('M173 144 Q180 138 187 144 M131 142 L124 138 M229 142 L236 138', '#d61f6f', 2.6) +
+        line('M144 140 L150 136 M194 140 L200 136', '#fff', 2.2);
+    } }
+  ];
+  var ITEM_BY_ID = {};
+  ITEMS.forEach(function (it) { ITEM_BY_ID[it.id] = it; });
+
+  // 옷 입는 순서 (아래 → 위)
+  var LAYERS_UNDER = ['socks', 'shoes', 'bottom', 'top', 'dress', 'outer', 'necklace', 'glasses'];
+  var LAYERS_OVER = ['head', 'bag', 'hand'];
+  var SLOTS = LAYERS_UNDER.concat(LAYERS_OVER);
+
+  // 옷장 칸
+  var PAGES = [
+    { id: 'clothes', label: '👚 상의', slots: ['top', 'outer'] },
+    { id: 'bottoms', label: '👖 하의', slots: ['bottom', 'socks'] },
+    { id: 'dress', label: '👗 드레스', slots: ['dress'] },
+    { id: 'shoes', label: '👠 신발·가방', slots: ['shoes', 'bag', 'hand'], max: 1.1 },
+    { id: 'acc', label: '👑 액세서리', slots: ['head', 'necklace', 'glasses'], max: 1.3 },
+    { id: 'hair', label: '💇‍♀️ 머리', slots: [] }
+  ];
 
   // =====================================================================
-  //  공주님 그리기
+  //  공주님 전체 그리기
   // =====================================================================
-  function render(s, g) {
-    var dress = DRESS[s.dress];
-    var out = BG[s.bg](g) +
-      '<ellipse cx="150" cy="488" rx="75" ry="9" fill="rgba(0,0,0,.15)"/>' +
-      (dress.back ? dress.back(s.dressColor, g) : '') +
-      HAIR[s.hair].back(s.hairColor) +
-      body(s.skin) +
-      (s.shoes === 'none' ? feet(s.skin) : SHOES[s.shoes](s.shoeColor)) +
-      dress.front(s.dressColor, g) +
-      NECK[s.necklace]() +
-      head(s.skin) +
-      FACE[s.face]() +
-      HAIR[s.hair].front(s.hairColor) +
-      CROWN[s.crown](g) +
-      ITEM[s.item]() +
-      hands(s.skin);
-    var name = (s.name || '').trim();
-    if (name) {
-      out += '<rect x="60" y="494" width="180" height="22" rx="11" fill="#fff" stroke="#ff6fae" stroke-width="2" opacity=".95"/>' +
-        '<text x="150" y="510" text-anchor="middle" font-size="14" fill="#d6437f" font-family="Jua, sans-serif">' +
-        escapeXml(name) + ' 공주님</text>';
-    }
+  function itemMarkup(it, p) {
+    return (it.back ? it.back(p + 'k') : '') + it.draw(p);
+  }
+  function dollMarkup(st, ctx, interactive) {
+    var worn = st.worn || {};
+    var wrap = function (slot, html) {
+      return interactive ? '<g class="worn" data-item="' + worn[slot] + '">' + html + '</g>' : html;
+    };
+    var hair = HAIRS[st.hair];
+    var out = hairDefs(ctx + 'h', st.hairColor) + hair.back(ctx + 'h', st.hairColor);
+    SLOTS.forEach(function (slot) {
+      var it = worn[slot] && ITEM_BY_ID[worn[slot]];
+      if (it && it.back) out += wrap(slot, it.back(ctx + it.id + 'k'));
+    });
+    out += bodySVG(ctx + 'b', st.skin);
+    LAYERS_UNDER.forEach(function (slot) {
+      var it = worn[slot] && ITEM_BY_ID[worn[slot]];
+      if (it) out += wrap(slot, it.draw(ctx + it.id));
+    });
+    out += hair.front(ctx + 'h', st.hairColor);
+    LAYERS_OVER.forEach(function (slot) {
+      var it = worn[slot] && ITEM_BY_ID[worn[slot]];
+      if (it) out += wrap(slot, it.draw(ctx + it.id));
+    });
+    out += handsSVG(ctx + 'b', st.skin);
     return out;
   }
 
   // =====================================================================
-  //  옷장 설정
+  //  상태
   // =====================================================================
-  var CATS = [
-    { key: 'dress', label: '드레스', emo: '👗', colorKey: 'dressColor',
-      colors: ['#ff8fc7', '#c58bff', '#7ec8ff', '#ffe27a', '#8fe3b0', '#ff6b6b', '#f4efff', '#3d4a9e'],
-      items: [['ballgown', '볼가운', '👗'], ['mini', '미니드레스', '💃'], ['mermaid', '인어드레스', '🧜‍♀️'],
-              ['hanbok', '한복', '🎎'], ['fairy', '요정드레스', '🧚‍♀️']] },
-    { key: 'hair', label: '머리', emo: '💇‍♀️', colorKey: 'hairColor',
-      colors: ['#f5d36b', '#8b5a3c', '#2b2233', '#e86fa8', '#9c7be0', '#7fc8f0', '#eeeef5', '#e8743b'],
-      items: [['long', '긴 생머리', '💁‍♀️'], ['wavy', '웨이브', '🌊'], ['twin', '양갈래', '🎀'],
-              ['bun', '올림머리', '🍡'], ['bob', '단발', '✂️'], ['pony', '포니테일', '🐴']] },
-    { key: 'shoes', label: '신발', emo: '👠', colorKey: 'shoeColor',
-      colors: ['#ff5fa2', '#b07cff', '#5aaeff', '#ffd24a', '#ffffff', '#3a2a3a', '#e8453c'],
-      items: [['heels', '구두', '👠'], ['boots', '부츠', '👢'], ['ribbon', '리본슈즈', '🥿'],
-              ['glass', '유리구두', '💎'], ['none', '맨발', '🦶']] },
-    { key: 'crown', label: '머리장식', emo: '👑',
-      items: [['tiara', '티아라', '👸'], ['crown', '왕관', '👑'], ['bow', '리본', '🎀'],
-              ['flower', '꽃관', '🌸'], ['none', '없음', '❌']] },
-    { key: 'necklace', label: '목걸이', emo: '💎',
-      items: [['pearl', '진주', '⚪'], ['heart', '하트', '💖'], ['choker', '초커', '🎗️'], ['none', '없음', '❌']] },
-    { key: 'item', label: '소품', emo: '🪄',
-      items: [['wand', '요술봉', '🪄'], ['fan', '부채', '🪭'], ['bouquet', '꽃다발', '💐'],
-              ['parasol', '양산', '⛱️'], ['none', '없음', '❌']] },
-    { key: 'face', label: '표정', emo: '😊',
-      items: [['smile', '방긋', '😊'], ['wink', '윙크', '😉'], ['happy', '신나요', '😆'], ['surprised', '깜짝', '😮']] },
-    { key: 'skin', label: '피부', emo: '🎨', colorKey: 'skin',
-      colors: ['#ffe3d3', '#f8d0b0', '#e9b48a', '#c98d62', '#8d5a3b'], items: [] },
-    { key: 'bg', label: '배경', emo: '🏰',
-      items: [['castle', '성', '🏰'], ['garden', '정원', '🌷'], ['night', '밤하늘', '🌙'], ['ballroom', '무도회장', '✨']] }
-  ];
-
-  var DEFAULT = {
-    bg: 'castle', skin: '#ffe3d3', hair: 'long', hairColor: '#f5d36b', face: 'smile',
-    dress: 'ballgown', dressColor: '#ff8fc7', shoes: 'heels', shoeColor: '#ff5fa2',
-    crown: 'tiara', necklace: 'pearl', item: 'wand', name: ''
-  };
-
-  // 불러온 값이 올바른지 확인 (잘못된 값은 기본값으로)
+  var DEFAULT = { hair: 'wavy', hairColor: '#c8742f', skin: '#ffe6d8', worn: {} };
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  var state = clone(DEFAULT);
   function sanitize(o) {
-    var s = Object.assign({}, DEFAULT);
+    var s = clone(DEFAULT);
     if (!o || typeof o !== 'object') return s;
-    CATS.forEach(function (cat) {
-      if (cat.items.length && cat.items.some(function (it) { return it[0] === o[cat.key]; })) s[cat.key] = o[cat.key];
-      if (cat.colorKey && /^#[0-9a-fA-F]{6}$/.test(o[cat.colorKey] || '')) s[cat.colorKey] = o[cat.colorKey].toLowerCase();
-    });
-    if (typeof o.name === 'string') s.name = o.name.slice(0, 12);
+    if (HAIRS[o.hair]) s.hair = o.hair;
+    if (/^#[0-9a-fA-F]{6}$/.test(o.hairColor || '')) s.hairColor = o.hairColor.toLowerCase();
+    if (/^#[0-9a-fA-F]{6}$/.test(o.skin || '')) s.skin = o.skin.toLowerCase();
+    if (o.worn && typeof o.worn === 'object') {
+      SLOTS.forEach(function (slot) {
+        var it = ITEM_BY_ID[o.worn[slot]];
+        if (it && it.slot === slot) s.worn[slot] = it.id;
+      });
+    }
     return s;
   }
 
-  // =====================================================================
-  //  화면
-  // =====================================================================
-  var state = Object.assign({}, DEFAULT);
-  var curCat = 'dress';
   var $ = function (id) { return document.getElementById(id); };
+  var game = $('game'), dollSvg = $('doll'), dollWrap = $('dollWrap'), piecesEl = $('pieces');
+  var K = 1, curPage = 'clothes';
 
-  function draw(animate) {
-    var svg = $('stage');
-    svg.innerHTML = render(state, 'm');
-    if (animate) {
-      svg.classList.remove('pop');
-      void svg.getBoundingClientRect();
-      svg.classList.add('pop');
-      sparkle();
-    }
+  function renderDoll() { dollSvg.innerHTML = dollMarkup(state, 'd', true); }
+
+  // =====================================================================
+  //  옷장 배치
+  // =====================================================================
+  var BOX = {}, HOME = {}, PIECE = {};
+  function measureItems() {
+    var m = $('measure');
+    ITEMS.forEach(function (it) {
+      m.innerHTML = '<g id="mg">' + itemMarkup(it, 'm' + it.id) + '</g>';
+      var b = document.getElementById('mg').getBBox();
+      var pad = 7;
+      BOX[it.id] = { x: b.x - pad, y: b.y - pad, w: b.width + pad * 2, h: b.height + pad * 2 };
+    });
+    m.innerHTML = '';
   }
-
-  function sparkle() {
-    var wrap = $('stageWrap');
-    var icons = ['✨', '💖', '⭐', '✨', '🌸'];
-    for (var i = 0; i < 6; i++) {
-      var sp = document.createElement('span');
-      sp.className = 'sparkle';
-      sp.textContent = icons[Math.floor(Math.random() * icons.length)];
-      sp.style.left = (15 + Math.random() * 65) + '%';
-      sp.style.top = (10 + Math.random() * 70) + '%';
-      sp.style.animationDelay = (Math.random() * 0.2) + 's';
-      wrap.appendChild(sp);
-      setTimeout(function (el) { el.remove(); }, 1200, sp);
+  // 한 칸 안에 옷을 가장 크게 놓을 수 있는 배율을 찾아서 줄 맞춰 놓기
+  function layoutPage(page) {
+    var items = ITEMS.filter(function (it) { return page.slots.indexOf(it.slot) >= 0; });
+    items.sort(function (a, b) { return page.slots.indexOf(a.slot) - page.slots.indexOf(b.slot); });
+    var W = 740, H = 650, GAP_X = 14, GAP_Y = 26;
+    function flow(s) {
+      var rows = [], row = [], x = 0;
+      items.forEach(function (it) {
+        var w = BOX[it.id].w * s;
+        if (row.length && x + w > W) { rows.push(row); row = []; x = 0; }
+        row.push(it); x += w + GAP_X;
+      });
+      if (row.length) rows.push(row);
+      var h = 0;
+      rows.forEach(function (r) { h += Math.max.apply(null, r.map(function (it) { return BOX[it.id].h * s; })) + GAP_Y; });
+      return { rows: rows, h: h - GAP_Y };
     }
+    var s = page.max || 0.9, f = flow(s);
+    while (f.h > H && s > 0.2) { s -= 0.01; f = flow(s); }
+    var y = Math.max(0, (H - f.h) / 2);
+    f.rows.forEach(function (r) {
+      var rowW = r.reduce(function (acc, it) { return acc + BOX[it.id].w * s; }, 0) + GAP_X * (r.length - 1);
+      var rowH = Math.max.apply(null, r.map(function (it) { return BOX[it.id].h * s; }));
+      var x = (W - rowW) / 2 + 9;
+      r.forEach(function (it) {
+        var w = BOX[it.id].w * s, h = BOX[it.id].h * s;
+        HOME[it.id] = { x: x, y: y + (rowH - h) / 2, w: w, h: h, page: page.id };
+        x += w + GAP_X;
+      });
+      y += rowH + GAP_Y;
+    });
+  }
+  function buildPieces() {
+    PAGES.forEach(function (pg) { if (pg.slots.length) layoutPage(pg); });
+    piecesEl.innerHTML = '';
+    ITEMS.forEach(function (it) {
+      var h = HOME[it.id], b = BOX[it.id];
+      var el = document.createElement('div');
+      el.className = 'piece';
+      el.dataset.id = it.id;
+      el.style.left = h.x + 'px'; el.style.top = h.y + 'px';
+      el.style.width = h.w + 'px'; el.style.height = h.h + 'px';
+      el.innerHTML = '<svg viewBox="' + b.x + ' ' + b.y + ' ' + b.w + ' ' + b.h + '" xmlns="http://www.w3.org/2000/svg">' +
+        itemMarkup(it, 'r' + it.id) + '</svg><span class="tag">' + it.name + '</span>';
+      el.addEventListener('pointerdown', function (e) { startDrag(e, it.id, false); });
+      piecesEl.appendChild(el);
+      PIECE[it.id] = el;
+    });
+  }
+  function refreshPieces() {
+    ITEMS.forEach(function (it) {
+      var el = PIECE[it.id];
+      el.classList.toggle('off', HOME[it.id].page !== curPage);
+      el.classList.toggle('worn', state.worn[it.slot] === it.id);
+    });
   }
 
   function renderTabs() {
-    $('tabs').innerHTML = CATS.map(function (c) {
-      return '<button class="tab' + (c.key === curCat ? ' active' : '') + '" data-cat="' + c.key + '">' +
-        '<span class="emo">' + c.emo + '</span>' + c.label + '</button>';
+    $('tabs').innerHTML = PAGES.map(function (pg) {
+      return '<button class="tab' + (pg.id === curPage ? ' active' : '') + '" data-page="' + pg.id + '">' + pg.label + '</button>';
     }).join('');
+    $('hairPanel').classList.toggle('show', curPage === 'hair');
+    if (curPage === 'hair') renderHairPanel();
   }
 
-  function renderPanel() {
-    var cat = CATS.filter(function (c) { return c.key === curCat; })[0];
-    $('panelTitle').textContent = cat.emo + ' ' + cat.label + (cat.items.length ? ' 고르기' : ' 색 고르기');
-    $('panelTitle').style.display = cat.items.length ? '' : 'none';
-    $('items').style.display = cat.items.length ? '' : 'none';
-    $('items').innerHTML = cat.items.map(function (it) {
-      return '<button class="item' + (state[cat.key] === it[0] ? ' selected' : '') + '" data-key="' + cat.key + '" data-val="' + it[0] + '">' +
-        '<span class="emo">' + it[2] + '</span>' + it[1] + '</button>';
-    }).join('');
+  function renderHairPanel() {
+    var html = '<h3>💇‍♀️ 머리 모양</h3><div class="hair-row">';
+    HAIR_ORDER.forEach(function (key) {
+      var prev = { hair: key, hairColor: state.hairColor, skin: state.skin, worn: {} };
+      html += '<button class="hair-btn' + (state.hair === key ? ' active' : '') + '" data-hair="' + key + '">' +
+        '<svg viewBox="60 -10 240 360">' + dollMarkup(prev, 'hp' + key, false) + '</svg>' + HAIRS[key].name + '</button>';
+    });
+    html += '</div><h3>🎨 머리 색깔</h3><div class="sw-row">';
+    HAIR_COLORS.forEach(function (c) {
+      html += '<div class="sw' + (state.hairColor === c ? ' active' : '') + '" style="background:' + c + '" data-hc="' + c + '"></div>';
+    });
+    html += '</div><h3>🌸 피부색</h3><div class="sw-row">';
+    SKIN_COLORS.forEach(function (c) {
+      html += '<div class="sw' + (state.skin === c ? ' active' : '') + '" style="background:' + c + '" data-skin="' + c + '"></div>';
+    });
+    $('hairPanel').innerHTML = html + '</div>';
+  }
 
-    var showColors = !!cat.colorKey && !(cat.key === 'shoes' && (state.shoes === 'glass' || state.shoes === 'none'));
-    $('colorTitle').style.display = showColors ? '' : 'none';
-    $('colors').style.display = showColors ? '' : 'none';
-    if (showColors) {
-      $('colorTitle').textContent = cat.key === 'skin' ? '🎨 피부색 고르기' : '🎨 ' + cat.label + ' 색깔';
-      $('colors').innerHTML = cat.colors.map(function (col) {
-        return '<button class="swatch' + (state[cat.colorKey] === col ? ' selected' : '') + '" style="background:' + col +
-          '" data-key="' + cat.colorKey + '" data-val="' + col + '" aria-label="' + col + '"></button>';
-      }).join('');
+  // =====================================================================
+  //  입히기 / 벗기기
+  // =====================================================================
+  function wear(id) {
+    var it = ITEM_BY_ID[id];
+    if (it.slot === 'dress') { delete state.worn.top; delete state.worn.bottom; }
+    if (it.slot === 'top' || it.slot === 'bottom') delete state.worn.dress;
+    state.worn[it.slot] = id;
+    renderDoll(); refreshPieces();
+  }
+  function unwear(id) {
+    var it = ITEM_BY_ID[id];
+    if (state.worn[it.slot] === id) delete state.worn[it.slot];
+    renderDoll(); refreshPieces();
+  }
+
+  // =====================================================================
+  //  끌어서 놓기
+  // =====================================================================
+  var drag = null;
+  var PIECES_X = 390, PIECES_Y = 12 + 62; // #rack + #pieces 위치
+  function toStage(e) {
+    var r = game.getBoundingClientRect();
+    return { x: (e.clientX - r.left) / K, y: (e.clientY - r.top) / K };
+  }
+  function overDoll(pt) {
+    var x = dollWrap.offsetLeft, y = dollWrap.offsetTop;
+    return pt.x > x + 10 && pt.x < x + 290 && pt.y > y && pt.y < y + 760;
+  }
+  function startDrag(e, id, fromDoll) {
+    if (drag) return;
+    e.preventDefault();
+    var el = PIECE[id], pt = toStage(e), h = HOME[id], offX, offY;
+    if (fromDoll) {
+      unwear(id);
+      offX = h.w / 2; offY = h.h / 2;
+      el.classList.add('flying');
+    } else {
+      offX = pt.x - (PIECES_X + h.x); offY = pt.y - (PIECES_Y + h.y);
+    }
+    el.classList.add('dragging');
+    drag = { id: id, el: el, offX: offX, offY: offY, pointerId: e.pointerId };
+    moveTo(pt);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+  }
+  function moveTo(pt) {
+    drag.el.style.left = (pt.x - drag.offX - PIECES_X) + 'px';
+    drag.el.style.top = (pt.y - drag.offY - PIECES_Y) + 'px';
+    dollWrap.classList.toggle('hover', overDoll(pt));
+  }
+  function onMove(e) { if (drag && e.pointerId === drag.pointerId) moveTo(toStage(e)); }
+  function onUp(e) {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    window.removeEventListener('pointercancel', onUp);
+    var pt = toStage(e), d = drag, h = HOME[d.id];
+    drag = null;
+    dollWrap.classList.remove('hover');
+    d.el.classList.remove('dragging');
+    if (overDoll(pt)) {
+      // 공주님에게 쏙! 옷장 자리는 비워 둠
+      d.el.style.transition = 'none';
+      d.el.style.left = h.x + 'px'; d.el.style.top = h.y + 'px';
+      d.el.classList.remove('flying');
+      wear(d.id);
+      void d.el.offsetWidth;
+      d.el.style.transition = '';
+      burst(pt.x, pt.y);
+    } else {
+      // 공주님 밖에 놓으면 제자리로 돌아가기
+      d.el.style.left = h.x + 'px'; d.el.style.top = h.y + 'px';
+      setTimeout(function () { d.el.classList.remove('flying'); }, 460);
+    }
+  }
+  dollSvg.addEventListener('pointerdown', function (e) {
+    var g = e.target.closest && e.target.closest('[data-item]');
+    if (g) startDrag(e, g.getAttribute('data-item'), true);
+  });
+
+  function burst(x, y) {
+    var icons = ['✨', '💖', '⭐', '✨', '💫', '🌸'];
+    for (var i = 0; i < 9; i++) {
+      var s = document.createElement('span');
+      s.className = 'burst';
+      s.textContent = icons[i % icons.length];
+      s.style.left = (x - 13) + 'px'; s.style.top = (y - 13) + 'px';
+      var a = Math.random() * Math.PI * 2, r = 60 + Math.random() * 70;
+      s.style.setProperty('--dx', (Math.cos(a) * r).toFixed(0) + 'px');
+      s.style.setProperty('--dy', (Math.sin(a) * r).toFixed(0) + 'px');
+      game.appendChild(s);
+      setTimeout(function (el) { el.remove(); }, 950, s);
     }
   }
 
-  function setValue(key, val) {
-    if (state[key] === val) return;
-    state[key] = val;
-    draw(true);
-    renderPanel();
-  }
-
-  function randomize() {
-    var pick = function (arr) { return arr[Math.floor(Math.random() * arr.length)]; };
-    CATS.forEach(function (c) {
-      if (c.items.length) state[c.key] = pick(c.items)[0];
-      if (c.colorKey) state[c.colorKey] = pick(c.colors);
-    });
-    draw(true);
-    renderPanel();
-    toast('🎲 짜잔! 새로운 옷이에요');
-  }
-
+  // =====================================================================
+  //  버튼들
+  // =====================================================================
   var toastTimer;
   function toast(msg) {
     var t = $('toast');
-    t.textContent = msg;
-    t.classList.add('show');
+    t.textContent = msg; t.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { t.classList.remove('show'); }, 1800);
   }
+  function randomize() {
+    var pick = function (arr) { return arr[Math.floor(Math.random() * arr.length)]; };
+    var bySlot = function (slot) { return ITEMS.filter(function (it) { return it.slot === slot; }); };
+    var w = {};
+    if (Math.random() < 0.5) w.dress = pick(bySlot('dress')).id;
+    else { w.top = pick(bySlot('top')).id; w.bottom = pick(bySlot('bottom')).id; }
+    w.shoes = pick(bySlot('shoes')).id;
+    var chance = { outer: 0.35, socks: 0.35, head: 0.75, necklace: 0.5, glasses: 0.15, bag: 0.35, hand: 0.35 };
+    Object.keys(chance).forEach(function (slot) { if (Math.random() < chance[slot]) w[slot] = pick(bySlot(slot)).id; });
+    state.worn = w;
+    state.hair = pick(HAIR_ORDER);
+    state.hairColor = pick(HAIR_COLORS);
+    renderDoll(); refreshPieces(); renderTabs();
+    burst(210, 300); burst(210, 560);
+    toast('🎲 짜잔! 새로운 코디예요');
+  }
+
+  $('tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-page]');
+    if (!b) return;
+    curPage = b.dataset.page;
+    renderTabs(); refreshPieces();
+  });
+  $('hairPanel').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-hair],[data-hc],[data-skin]');
+    if (!b) return;
+    if (b.dataset.hair) state.hair = b.dataset.hair;
+    if (b.dataset.hc) state.hairColor = b.dataset.hc;
+    if (b.dataset.skin) state.skin = b.dataset.skin;
+    renderDoll(); renderHairPanel();
+  });
+  $('resetBtn').addEventListener('click', function () {
+    state.worn = {};
+    renderDoll(); refreshPieces();
+    toast('🔄 옷을 모두 옷장에 돌려놨어요');
+  });
+  $('randomBtn').addEventListener('click', randomize);
+  $('fullBtn').addEventListener('click', function () {
+    var full = game.classList.toggle('full');
+    $('fullBtn').textContent = full ? '옷장 열기' : '전체모습';
+  });
+
+  // =====================================================================
+  //  사진 찍기
+  // =====================================================================
+  function sceneSVG(W, H) {
+    var rays = '';
+    for (var i = 0; i < 24; i++) {
+      var a1 = i * Math.PI / 12, a2 = a1 + Math.PI / 30;
+      rays += 'M300 620 L' + (300 + Math.cos(a1) * 1200).toFixed(0) + ' ' + (620 + Math.sin(a1) * 1200).toFixed(0) +
+        ' L' + (300 + Math.cos(a2) * 1200).toFixed(0) + ' ' + (620 + Math.sin(a2) * 1200).toFixed(0) + 'Z ';
+    }
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 1000" width="' + W + '" height="' + H + '">' +
+      '<defs><radialGradient id="pbg" cx=".5" cy=".62" r=".75"><stop offset="0" stop-color="#ff8be6"/><stop offset=".35" stop-color="#d046dc"/>' +
+      '<stop offset=".7" stop-color="#8a26c9"/><stop offset="1" stop-color="#45107f"/></radialGradient>' +
+      '<linearGradient id="ppt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff7b0"/><stop offset="1" stop-color="#ffc21a"/></linearGradient></defs>' +
+      '<rect width="600" height="1000" fill="url(#pbg)"/><path d="' + rays + '" fill="#fff" opacity=".12"/>' +
+      '<ellipse cx="300" cy="940" rx="180" ry="30" fill="url(#ppt)" stroke="#e0a000" stroke-width="3"/>' +
+      '<g transform="translate(120 60)">' + dollMarkup(state, 'x', false) + '</g>' +
+      '<text x="300" y="990" text-anchor="middle" font-size="26" fill="#fff" font-family="Jua, sans-serif">공주님 옷 입히기</text></svg>';
+  }
+  function takePhoto() {
+    var img = new Image(), W = 600, H = 1000;
+    img.onload = function () {
+      var cv = document.createElement('canvas');
+      cv.width = W; cv.height = H;
+      cv.getContext('2d').drawImage(img, 0, 0, W, H);
+      var url;
+      try { url = cv.toDataURL('image/png'); } catch (e) { url = img.src; }
+      $('photoImg').src = url;
+      $('photoDownload').href = url;
+      $('photoModal').classList.add('open');
+    };
+    img.onerror = function () { toast('앗, 사진을 만들지 못했어요'); };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(sceneSVG(W, H));
+  }
+  $('photoBtn').addEventListener('click', takePhoto);
 
   // =====================================================================
   //  저장 / 불러오기 (구글 앱스 스크립트, 없으면 브라우저에 저장)
   // =====================================================================
   var HAS_GAS = typeof google !== 'undefined' && google.script && google.script.run;
-  var LOCAL_KEY = 'princess_outfits';
+  var LOCAL_KEY = 'princess_dressup_v2';
   var localApi = {
     getOutfits: function () {
-      try { return JSON.parse(localStorage.getItem(LOCAL_KEY)) || [null, null, null]; }
-      catch (e) { return [null, null, null]; }
+      try { return JSON.parse(localStorage.getItem(LOCAL_KEY)) || [null, null, null]; } catch (e) { return [null, null, null]; }
     },
     saveOutfit: function (slot, outfit) {
       var list = localApi.getOutfits();
-      var o = Object.assign({}, outfit, { savedAt: new Date().toISOString() });
-      list[slot - 1] = o;
-      try { localStorage.setItem(LOCAL_KEY, JSON.stringify(list)); } catch (e) { throw new Error('저장할 수 없어요'); }
-      return o;
+      list[slot - 1] = Object.assign({}, outfit, { savedAt: new Date().toISOString() });
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(list));
+      return list[slot - 1];
     },
     deleteOutfit: function (slot) {
       var list = localApi.getOutfits();
       list[slot - 1] = null;
-      try { localStorage.setItem(LOCAL_KEY, JSON.stringify(list)); } catch (e) { /* 무시 */ }
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(list));
       return true;
     }
   };
@@ -1029,8 +1405,8 @@
       }
     });
   }
-
   var slotData = [null, null, null];
+  function errMsg(e) { return e && e.message ? e.message : String(e); }
   function openSaveModal() {
     $('saveModal').classList.add('open');
     $('saveHint').textContent = '불러오는 중... ⏳';
@@ -1039,122 +1415,75 @@
       slotData = list || [null, null, null];
       renderSlots();
       $('saveHint').textContent = HAS_GAS ? '구글 계정에 저장돼요 ☁️' : '이 브라우저에 저장돼요 💻';
-    }).catch(function (e) {
-      $('saveHint').textContent = '앗, 불러오지 못했어요: ' + (e && e.message ? e.message : e);
-    });
+    }).catch(function (e) { $('saveHint').textContent = '앗, 불러오지 못했어요: ' + errMsg(e); });
   }
   function renderSlots() {
     $('slots').innerHTML = slotData.map(function (o, i) {
       var n = i + 1;
-      var thumb = o ? '<svg viewBox="0 0 300 520" xmlns="http://www.w3.org/2000/svg">' + render(sanitize(o), 's' + n) + '</svg>' : '👗';
-      var label = o ? (o.name ? escapeXml(o.name) + ' 공주님' : n + '번 서랍') : '비어 있어요';
+      var thumb = o ? '<svg viewBox="0 -10 360 910">' + dollMarkup(sanitize(o), 's' + n, false) + '</svg>' : '👗';
       return '<div class="slot"><div class="thumb">' + thumb + '</div>' +
-        '<div class="label">' + label + '</div>' +
-        '<button class="btn" data-save="' + n + '">💾 여기 저장</button>' +
-        (o ? '<button class="btn purple" data-load="' + n + '">📂 불러오기</button>' +
-             '<button class="btn gray" data-del="' + n + '">🗑️ 지우기</button>' : '') +
-        '</div>';
+        '<button class="cloud-btn" data-save="' + n + '">💾 여기 저장</button>' +
+        (o ? '<button class="cloud-btn gold" data-load="' + n + '">👗 입히기</button>' +
+             '<button class="cloud-btn blue" data-del="' + n + '">🗑️ 지우기</button>' : '') + '</div>';
     }).join('');
   }
-  function saveTo(n) {
-    if (slotData[n - 1] && !confirm(n + '번 서랍에 있는 옷을 새 옷으로 바꿀까요?')) return;
-    $('saveHint').textContent = '저장하는 중... ⏳';
-    api('saveOutfit', n, state).then(function (saved) {
-      slotData[n - 1] = saved;
-      renderSlots();
-      $('saveHint').textContent = '';
-      toast('💾 ' + n + '번 서랍에 저장했어요!');
-    }).catch(function (e) {
-      $('saveHint').textContent = '앗, 저장하지 못했어요: ' + (e && e.message ? e.message : e);
-    });
-  }
-  function loadFrom(n) {
-    state = sanitize(slotData[n - 1]);
-    $('nameInput').value = state.name;
-    draw(true);
-    renderPanel();
-    $('saveModal').classList.remove('open');
-    toast('📂 ' + n + '번 서랍의 옷을 입었어요!');
-  }
-  function deleteSlot(n) {
-    if (!confirm(n + '번 서랍을 비울까요?')) return;
-    api('deleteOutfit', n).then(function () {
-      slotData[n - 1] = null;
-      renderSlots();
-    });
-  }
-
-  // =====================================================================
-  //  사진 찍기 (PNG)
-  // =====================================================================
-  function takePhoto() {
-    var W = 600, H = 1040;
-    var svgStr = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 520" width="' + W + '" height="' + H + '">' +
-      render(state, 'p') + '</svg>';
-    var img = new Image();
-    img.onload = function () {
-      var canvas = document.createElement('canvas');
-      canvas.width = W; canvas.height = H;
-      canvas.getContext('2d').drawImage(img, 0, 0, W, H);
-      var url;
-      try { url = canvas.toDataURL('image/png'); } catch (e) { url = img.src; }
-      $('photoImg').src = url;
-      $('photoDownload').href = url;
-      $('photoDownload').download = ((state.name || '').trim() || 'princess') + '.png';
-      $('photoModal').classList.add('open');
-    };
-    img.onerror = function () { toast('앗, 사진을 만들지 못했어요'); };
-    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
-  }
-
-  // =====================================================================
-  //  이벤트 연결
-  // =====================================================================
-  $('tabs').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-cat]');
-    if (!b) return;
-    curCat = b.dataset.cat;
-    renderTabs();
-    renderPanel();
-  });
-  $('items').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-key]');
-    if (b) setValue(b.dataset.key, b.dataset.val);
-  });
-  $('colors').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-key]');
-    if (b) setValue(b.dataset.key, b.dataset.val);
-  });
-  $('nameInput').addEventListener('input', function (e) {
-    state.name = e.target.value.slice(0, 12);
-    draw(false);
-  });
-  $('randomBtn').addEventListener('click', randomize);
-  $('resetBtn').addEventListener('click', function () {
-    var name = state.name;
-    state = Object.assign({}, DEFAULT, { name: name });
-    draw(true);
-    renderPanel();
-    toast('🔄 처음 옷으로 돌아왔어요');
-  });
-  $('photoBtn').addEventListener('click', takePhoto);
-  $('saveBtn').addEventListener('click', openSaveModal);
   $('slots').addEventListener('click', function (e) {
     var b = e.target.closest('button');
     if (!b) return;
-    if (b.dataset.save) saveTo(+b.dataset.save);
-    if (b.dataset.load) loadFrom(+b.dataset.load);
-    if (b.dataset.del) deleteSlot(+b.dataset.del);
+    var n = +(b.dataset.save || b.dataset.load || b.dataset.del);
+    if (b.dataset.save) {
+      if (slotData[n - 1] && !confirm(n + '번 서랍의 옷을 지금 옷으로 바꿀까요?')) return;
+      $('saveHint').textContent = '저장하는 중... ⏳';
+      api('saveOutfit', n, state).then(function (saved) {
+        slotData[n - 1] = saved; renderSlots();
+        $('saveHint').textContent = '';
+        toast('💾 ' + n + '번 서랍에 저장했어요!');
+      }).catch(function (err) { $('saveHint').textContent = '앗, 저장하지 못했어요: ' + errMsg(err); });
+    } else if (b.dataset.load) {
+      state = sanitize(slotData[n - 1]);
+      renderDoll(); refreshPieces(); renderTabs();
+      $('saveModal').classList.remove('open');
+      burst(210, 400);
+      toast('👗 ' + n + '번 서랍의 옷을 입었어요!');
+    } else if (b.dataset.del) {
+      if (!confirm(n + '번 서랍을 비울까요?')) return;
+      api('deleteOutfit', n).then(function () { slotData[n - 1] = null; renderSlots(); });
+    }
   });
+  $('saveBtn').addEventListener('click', openSaveModal);
   document.querySelectorAll('.modal').forEach(function (m) {
     m.addEventListener('click', function (e) {
       if (e.target === m || e.target.hasAttribute('data-close')) m.classList.remove('open');
     });
   });
 
+  // =====================================================================
+  //  화면 크기 맞추기 + 시작
+  // =====================================================================
+  function fit() {
+    var vw = window.innerWidth, vh = window.innerHeight;
+    K = Math.min(vw / 1180, vh / 850);
+    game.style.transform = 'scale(' + K + ')';
+    game.style.left = ((vw - 1160 * K) / 2) + 'px';
+    game.style.top = ((vh - 830 * K) / 2) + 'px';
+  }
+  window.addEventListener('resize', fit);
+
+  (function makeTwinkles() {
+    var box = $('twinkles'), html = '';
+    for (var i = 0; i < 26; i++) {
+      html += '<span class="twinkle" style="left:' + (Math.random() * 1130).toFixed(0) + 'px;top:' + (Math.random() * 740).toFixed(0) +
+        'px;font-size:' + (10 + Math.random() * 18).toFixed(0) + 'px;animation-delay:' + (Math.random() * 2.4).toFixed(2) + 's">✦</span>';
+    }
+    box.innerHTML = html;
+  })();
+
+  fit();
+  measureItems();
+  buildPieces();
   renderTabs();
-  renderPanel();
-  draw(false);
+  refreshPieces();
+  renderDoll();
   </script>
 </body>
 </html>
