@@ -433,137 +433,411 @@
   // =====================================================================
   //  공주님 몸
   // =====================================================================
+  function mixHex(a, b, t) {
+    var x = parseInt(a.slice(1), 16), y = parseInt(b.slice(1), 16), o = 0;
+    [16, 8, 0].forEach(function (s) {
+      var u = (x >> s) & 255, v = (y >> s) & 255;
+      o += Math.round(u + (v - u) * t) << s;
+    });
+    return '#' + (o + (1 << 24)).toString(16).slice(1);
+  }
+  // 피부색에서 섞어 낸 따뜻한 윤곽선 색
+  function warmLine(skin, a) { return mixHex(shade(skin, -a), '#b0404a', 0.2); }
+  // 소수점 찌꺼기(142.60000000000002 같은 것)를 정리
+  function tidy(s) { return s.replace(/(\d+\.\d{3,})/g, function (v) { return String(Math.round(v * 100) / 100); }); }
+  var FACE_D = 'M180 56 C151 56 126 76 125 118 C124 146 127 165 137.5 180 C149 197 165 210 180 210 C195 210 211 197 222.5 180 C233 165 236 146 235 118 C234 76 209 56 180 56Z';
   function bodySVG(p, skin) {
-    var sd = shade(skin, -0.25), sid = p + 'skin';
-    var sk = 'fill="url(#' + sid + ')" stroke="' + sd + '" stroke-width="1.3" stroke-linejoin="round"';
+    var sd = warmLine(skin, 0.3), sid = p + 'skin';
+    var sk = 'fill="url(#' + sid + ')" stroke="' + sd + '" stroke-width="1.1" stroke-linejoin="round"';
     var leg = P('M126 450 C116 520 130 600 140 645 C136 700 142 760 150 836 L168 836 C168 780 176 720 172 645 C178 600 182 540 181 494 Z', sk) +
-      line('M150 640 Q156 646 162 640', sd, 1.2, 'opacity=".6"') +
+      '<ellipse cx="155" cy="628" rx="7" ry="12" fill="url(#' + p + 'kn)"/>' +
+      line('M150 640 Q156 646 162 640', sd, 1.1, 'opacity=".5"') +
       P('M149 830 Q144 856 149 871 Q159 880 170 871 Q174 852 169 830Z', sk) +
-      line('M153 866 Q159 870 166 866', sd, 1, 'opacity=".5"');
-    var arm = P('M124 254 Q104 262 103 300 L97 400 Q93 452 95 500 L111 502 Q114 452 119 402 L128 318 Q130 290 132 272 Z', sk) +
-      line('M104 396 Q108 400 114 398', sd, 1, 'opacity=".5"');
+      line('M153 866 Q159 870 166 866', sd, 1, 'opacity=".45"');
+    var arm = P('M124 254 C109 258 103 276 102 300 C101 334 99 368 97 400 C95 434 94 468 95 500 L111 502 C112 470 115 436 119 402 C122 372 126 344 128 318 C130 298 131 284 132 272 Z', sk) +
+      line('M104 396 Q108 400 114 398', sd, 1, 'opacity=".45"');
+    // 귀는 올림머리일 때만 보입니다 (HAIRS.bun.back 에서 <use> 로 그림)
+    var ear = P('M128 136 C121 130 114.5 137 116 149 C117.5 160 122 167.5 130 167.5 Z', 'fill="' + shade(skin, -0.03) + '" stroke="' + sd + '" stroke-width="1.1"') +
+      line('M125 142 C120 143.5 120 152 123.5 160', sd, 1, 'opacity=".5"') +
+      '<ellipse cx="121.5" cy="152" rx="2.2" ry="5" fill="#ff8fa8" opacity=".25"/>';
     var uw = '#ffb3d1';
-    return '<defs>' + G(sid, skin) + G(p + 'uw', uw) + '</defs>' +
+    return '<defs>' + G(sid, skin) + G(p + 'uw', uw) +
+      '<radialGradient id="' + p + 'face" cx=".5" cy=".45" r=".62"><stop offset="0" stop-color="' + shade(skin, 0.16) + '"/>' +
+      '<stop offset=".72" stop-color="' + skin + '"/><stop offset="1" stop-color="' + shade(skin, -0.08) + '"/></radialGradient>' +
+      '<radialGradient id="' + p + 'kn"><stop offset="0" stop-color="#fff" stop-opacity=".4"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>' +
+      '<g id="' + p + 'ears">' + BOTH(ear) + '</g></defs>' +
       BOTH(leg) +
       P('M166 186 L166 240 Q180 247 194 240 L194 186Z', sk) +
       P(sym([180, 244], [['Q', 170, 244, 166, 238], ['Q', 150, 248, 124, 256], ['Q', 118, 282, 127, 312], ['Q', 134, 342, 148, 372],
         ['Q', 138, 410, 125, 446], ['Q', 120, 470, 128, 490], ['L', 180, 498]]), sk) +
-      line('M170 250 Q164 256 158 254 M190 250 Q196 256 202 254', sd, 1, 'opacity=".5"') +
-      line('M180 360 L180 366', sd, 1.5, 'opacity=".5"') +
+      line('M171 251 Q164 256 156 254 M189 251 Q196 256 204 254', sd, 1, 'opacity=".4"') +
+      line('M180 360 L180 366', sd, 1.5, 'opacity=".45"') +
       // 속옷 (튜브탑 + 반바지)
       P(sym([180, 292], [['Q', 160, 280, 130, 288], ['Q', 126, 312, 133, 334], ['Q', 160, 342, 180, 340]]), fillAttr(p + 'uw', uw, 1.3)) +
       line('M140 300 Q160 306 180 304 Q200 306 220 300', '#fff', 1.5, 'opacity=".6"') +
       P(sym([180, 430], [['Q', 150, 428, 127, 432], ['Q', 121, 450, 124, 466], ['Q', 150, 474, 168, 488], ['L', 180, 486]]), fillAttr(p + 'uw', uw, 1.3)) +
       bow(180, 436, 5, '#ff6fae') +
       BOTH(arm) +
-      P('M166 196 Q180 214 194 196 L194 210 Q180 226 166 210Z', 'fill="' + sd + '" opacity=".28"') +
+      // 턱 밑 그림자 (셀 애니메이션 느낌)
+      P('M166 192 Q180 214 194 192 L194 212 Q180 229 166 212Z', 'fill="' + warmLine(skin, 0.45) + '" opacity=".3"') +
       // 얼굴
-      P('M126 118 Q124 168 148 194 Q166 210 180 211 Q194 210 212 194 Q236 168 234 118 Q234 58 180 56 Q126 58 126 118Z',
-        'fill="' + skin + '" stroke="' + sd + '" stroke-width="1.3"') +
+      P(FACE_D, 'fill="url(#' + p + 'face)" stroke="' + sd + '" stroke-width="1.2"') +
       faceSVG(p, skin);
   }
 
   function handsSVG(p, skin) {
-    var sd = shade(skin, -0.25);
-    var hand = P('M95 496 Q88 512 90 530 Q92 547 101 553 Q109 555 112 546 L114 530 Q117 518 112 499 Z',
-        'fill="url(#' + p + 'skin)" stroke="' + sd + '" stroke-width="1.3" stroke-linejoin="round"') +
-      line('M110 512 Q117 520 113 531 M99 540 L100 550 M104 541 L105 552', sd, 1, 'opacity=".6"');
+    var sd = warmLine(skin, 0.3), fill = 'fill="url(#' + p + 'skin)"';
+    // 몸 쪽으로 살짝 말아 쥔 가느다란 손 (손목 위쪽 선은 그리지 않아요)
+    var edge = 'M95 495 C91.5 503 89.5 512 89.5 521 C89.5 530 91 539 94.5 546 C96.5 550.5 99.5 554 102.5 554.5 C105 555 106.4 552.6 105.2 550.2 ' +
+      'C103.6 547 102.2 543.6 101.8 540 C104 544.5 106.4 548 109 548.6 C111.2 549 112.2 546.8 111 544.6 C109.6 541.8 108.8 538.4 108.8 535 ' +
+      'C111.6 533 113.2 529.5 113.4 524 C113.6 516 112.8 507 111 497';
+    var thumb = 'M111.2 505 C115.4 511 116.6 521 114.4 530 C113.2 534.6 110.6 537 108.6 535.8 C107 534.8 107.6 531.6 108.4 528.6 C109.8 522 110 514 109 508';
+    var hand = P(edge + 'Z', fill) + line(edge, sd, 1.1) +
+      line('M101.8 540 C100.4 534 99.6 529 100 524 M108.8 535 C107 531 105.8 527 105.6 522', sd, 0.9, 'opacity=".4"') +
+      P(thumb + 'Z', fill) + line(thumb, sd, 1) +
+      '<ellipse cx="102.6" cy="551.6" rx="1.5" ry="1.1" fill="#fff" opacity=".55"/><ellipse cx="109.4" cy="546" rx="1.1" ry=".9" fill="#fff" opacity=".5"/>';
     return BOTH(hand);
   }
 
+  // 눈 흰자 (왼쪽 눈 기준, 가운데 약 156,150 — 안경 위치와 같음)
+  var EYE_W = 'M139.2 148.8 C142.6 141.6 149.2 137.9 156.5 137.8 C164 137.7 169.4 142.2 171.8 151.2 C168.4 158 162.4 161.2 155.8 161.2 C148 161.2 141.8 156.6 139.2 148.8Z';
   function faceSVG(p, skin) {
-    var sd = shade(skin, -0.25);
+    var sd = warmLine(skin, 0.3), ink = '#3a1f2e', ln = warmLine(skin, 0.42);
+    var lid = mixHex(skin, '#c77aa0', 0.4), lip = mixHex(skin, '#d8566f', 0.62), lipL = mixHex(skin, '#ec8398', 0.5), lipD = mixHex(skin, '#9a3048', 0.62);
     var eye =
-      P('M136 148 Q138 131 156 130 Q172 131 174 146 Q172 165 155 167 Q139 165 136 148Z', 'fill="#fff"') +
-      '<ellipse cx="156" cy="150" rx="11.5" ry="14.5" fill="url(#' + p + 'iris)" stroke="#1d3f7a" stroke-width="1"/>' +
-      '<ellipse cx="156" cy="152" rx="5.5" ry="7.5" fill="#15203d"/>' +
-      '<ellipse cx="151" cy="144" rx="4.2" ry="4.8" fill="#fff"/><circle cx="162" cy="158" r="2.2" fill="#fff"/>' +
-      line('M148 160 Q156 166 164 159', '#c8f0ff', 1.6, 'opacity=".9"') +
-      P('M131 147 Q135 127 156 125 Q173 125 179 140 Q171 132 156 132 Q140 133 136 150Z', 'fill="#2b1a2e"') +
-      P('M134 140 L123 132 L133 147Z M137 134 L128 124 L140 132Z', 'fill="#2b1a2e"') +
-      line('M143 166 Q155 171 168 165', '#8a5a60', 1.2) +
-      line('M140 122 Q156 114 173 122', sd, 1.2, 'opacity=".8"');
-    return '<defs>' + VG(p + 'iris', [[0, '#1c3a86'], [0.5, '#3f8fe0'], [1, '#a6ecff']]) + '</defs>' +
-      '<g class="eyes">' + eye + MIR(eye) + '</g>' +
-      BOTH(line('M141 108 Q154 102 168 106', '#9a6048', 1.8)) +
-      line('M181 172 Q184 178 179 180', sd, 1.4) +
-      P('M170 189 Q180 197 190 189 Q180 193 170 189Z', 'fill="#f07a93" stroke="#d65a78" stroke-width="1.2"') +
-      line('M176 198 Q180 199 184 198', '#f5a3b5', 1.2) +
-      BOTH('<ellipse cx="141" cy="177" rx="13" ry="6" fill="#ff8fb0" opacity=".4"/>' +
-        line('M134 176 L137 172 M139 177 L142 173 M144 178 L147 174', '#ff7fa3', 1, 'opacity=".7"'));
+      // 눈두덩 (은은한 아이섀도) + 쌍꺼풀 선 — 깜빡일 때 함께 접히도록 눈 그룹 안에
+      P('M136.6 145 C139.4 136 147.4 131.4 156.6 131.2 C165.6 131.2 170.8 136 172.2 145.4 C169.6 139.4 164.4 135.6 156.3 135.6 C147.4 135.8 140.6 139.6 136.6 145Z', 'fill="' + lid + '" opacity=".38"') +
+      line('M142.4 135.8 C146.8 131.6 152 130.2 157.2 130.2 C162.8 130.2 167.2 132.4 170 136.2', ln, 0.9, 'opacity=".5"') +
+      P(EYE_W, 'fill="#fffdfb"') +
+      '<g clip-path="url(#' + p + 'eyeclip)">' +
+        '<circle cx="156.2" cy="149.8" r="10.8" fill="url(#' + p + 'iris)" stroke="#1b2c5a" stroke-width="1.1"/>' +
+        '<circle cx="156.2" cy="150.2" r="4.7" fill="#0f1430"/>' +
+        // 윗눈꺼풀 그늘
+        P('M136 154 C140 140 149 136 157 136 C165 136 171 140 174 150 C167 143.5 162 142 157 142 C150 142 143 146 136 154Z', 'fill="#4a2a5a" opacity=".22"') +
+      '</g>' +
+      // 아랫눈꺼풀 (바깥쪽만, 바깥 끝이 더 진하게)
+      line('M140.8 152.8 C143.8 158 149.2 161.4 155.8 161.5 C160.4 161.5 164 160.3 166.8 158.3', ln, 1, 'opacity=".55"') +
+      line('M139.5 149.6 C140.6 152.8 142.4 155.2 145 157', ink, 1.2, 'opacity=".7"') +
+      // 윗눈꺼풀 선: 안쪽은 가늘고 바깥으로 갈수록 굵어지다 한 번 살짝 올라가요
+      P('M171.8 151.2 C169.4 142.2 164 137.7 156.5 137.8 C149.2 137.9 142.6 141.6 139.2 148.8 C138.4 147.6 137.5 146.4 136.4 145.4 ' +
+        'C139.6 141.4 144.6 137.4 150 136.3 C155 135.3 160.8 135.7 164.8 138.3 C168.6 140.9 170.8 145.2 172.2 151.2Z', 'fill="' + ink + '"') +
+      // 속눈썹 두 가닥 (안경 테 안쪽에 들어오도록 짧게)
+      P('M141.8 141.4 Q139.4 141 138.2 139.6 Q140 140.1 143 139.9Z M146.2 138.4 Q144 137.2 143.4 135 Q145 136.6 147.8 137.2Z', 'fill="' + ink + '"') +
+      // 눈물샘
+      '<circle cx="170.4" cy="152.8" r=".95" fill="#e8909e" opacity=".8"/>';
+    // 반짝임은 두 눈 모두 같은 방향(왼쪽 위 큰 것, 오른쪽 아래 작은 것)
+    var shine = function (x) {
+      return '<ellipse cx="' + tidy(String(x - 4.3)) + '" cy="145.2" rx="3" ry="3.3" fill="#fff"/><circle cx="' + tidy(String(x + 4.4)) + '" cy="154.6" r="1.4" fill="#fff" opacity=".9"/>';
+    };
+    return '<defs><radialGradient id="' + p + 'iris" cx=".5" cy=".68" r=".62"><stop offset="0" stop-color="#a6ecff"/>' +
+      '<stop offset=".5" stop-color="#3d8bd8"/><stop offset="1" stop-color="#1e3b86"/></radialGradient>' +
+      '<radialGradient id="' + p + 'blush"><stop offset="0" stop-color="#ff7a9c" stop-opacity=".45"/><stop offset="1" stop-color="#ff7a9c" stop-opacity="0"/></radialGradient>' +
+      '<clipPath id="' + p + 'eyeclip"><path d="' + EYE_W + '"/></clipPath><clipPath id="' + p + 'fclip"><path d="' + FACE_D + '"/></clipPath></defs>' +
+      '<g clip-path="url(#' + p + 'fclip)">' + BOTH('<ellipse cx="143" cy="176" rx="15" ry="9.5" fill="url(#' + p + 'blush)"/>') + '</g>' +
+      '<g class="eyes">' + eye + MIR(eye) + shine(156.2) + shine(203.8) + '</g>' +
+      // 코 (콧등 살짝 + 코끝 J 선 + 콧구멍)
+      line('M183.4 163.6 Q185.4 168.2 185.1 171.6', ln, 0.9, 'opacity=".22"') +
+      line('M185 171.4 C186.5 174.2 185.8 177 182.8 178.1 C181.4 178.6 180 178.5 178.9 177.9', ln, 1.15, 'opacity=".62"') +
+      line('M175.8 176.9 Q176.7 178.3 178 178.2', ln, 0.9, 'opacity=".4"') +
+      '<ellipse cx="181.2" cy="174.4" rx="1.6" ry="1.1" fill="#fff" opacity=".45"/>' +
+      // 입술 (다문 입 미소)
+      P('M170.6 188.6 C173.2 187.2 176 186.2 178.3 187.1 C179.3 187.5 180.7 187.5 181.7 187.1 C184 186.2 186.8 187.2 189.4 188.6 C185 191 175 191 170.6 188.6Z', 'fill="' + lip + '"') +
+      P('M173.4 190.5 C176.8 192.1 183.2 192.1 186.6 190.5 C185.4 194.2 182.8 195.6 180 195.6 C177.2 195.6 174.6 194.2 173.4 190.5Z', 'fill="' + lipL + '"') +
+      line('M170 188.3 C174 191 177.2 191.6 180 191.6 C182.8 191.6 186 191 190 188.3', lipD, 1.05) +
+      line('M168.6 187.1 Q169.1 188.4 170.4 188.9 M191.4 187.1 Q190.9 188.4 189.6 188.9', lipD, 0.9, 'opacity=".45"') +
+      '<ellipse cx="180" cy="193.6" rx="2.6" ry=".9" fill="#fff" opacity=".3"/>';
   }
 
   // =====================================================================
-  //  머리 모양
+  //  머리 모양 — 여러 겹의 머리카락 다발로 그립니다
   // =====================================================================
-  var BANGS = 'M122 128 C114 66 148 38 180 38 C212 38 246 66 238 128 Q232 108 224 98 Q224 112 216 122 Q210 102 198 90 Q200 106 190 118 ' +
-              'Q186 98 178 88 Q174 104 164 118 Q162 98 154 92 Q150 108 142 120 Q140 104 136 98 Q130 110 122 128Z';
+  // 점들을 부드럽게 지나는 곡선 위의 점들 (Catmull-Rom)
+  function crSample(pts, n) {
+    var out = [];
+    for (var i = 0; i < pts.length - 1; i++) {
+      var p0 = pts[i > 0 ? i - 1 : 0], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+      for (var k = 0; k < n; k++) {
+        var t = k / n, t2 = t * t, t3 = t2 * t, o = [];
+        for (var j = 0; j < 2; j++)
+          o[j] = 0.5 * (2 * p1[j] + (p2[j] - p0[j]) * t + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * t2 + (3 * p1[j] - p0[j] - 3 * p2[j] + p3[j]) * t3);
+        out.push(o);
+      }
+    }
+    out.push(pts[pts.length - 1].slice());
+    return out;
+  }
+  // 숫자를 짧게 (0.5 → .5, 음수 앞 빈칸 생략)
+  function nums(a) {
+    var s = '';
+    a.forEach(function (v, i) {
+      var t = String(Math.round(v * 100) / 100).replace(/^(-?)0\./, '$1.');
+      s += (i && t.charAt(0) !== '-' ? ' ' : '') + t;
+    });
+    return s;
+  }
+  // 점들을 지나는 부드러운 경로 (상대 좌표 c 명령으로 짧게). q = 반올림 단위
+  function crPath(pts, cont, q) {
+    var r = function (v) { return Math.round(v / q) * q; };
+    var R = pts.map(function (a) { return [r(a[0]), r(a[1])]; }), d = (cont ? 'L' : 'M') + nums(R[0]) + 'c', seg = [];
+    for (var i = 0; i < R.length - 1; i++) {
+      var p0 = R[i > 0 ? i - 1 : 0], p1 = R[i], p2 = R[i + 1], p3 = R[i + 2 < R.length ? i + 2 : i + 1];
+      seg.push(r((p2[0] - p0[0]) / 6), r((p2[1] - p0[1]) / 6), r(p2[0] - (p3[0] - p1[0]) / 6) - p1[0], r(p2[1] - (p3[1] - p1[1]) / 6) - p1[1], p2[0] - p1[0], p2[1] - p1[1]);
+    }
+    return d + nums(seg);
+  }
+  // 가운데 선 c 를 따라 굵기 fw, 치우침 fo 인 띠 모양
+  function band(c, i0, i1, fw, fo, q) {
+    var L = [], R = [];
+    for (var i = i0; i <= i1; i++) {
+      var a = c[Math.max(i - 1, 0)], b = c[Math.min(i + 1, c.length - 1)];
+      var tx = b[0] - a[0], ty = b[1] - a[1], l = Math.sqrt(tx * tx + ty * ty) || 1, nx = -ty / l, ny = tx / l;
+      var s = (i - i0) / Math.max(i1 - i0, 1), w = fw(i, s), o = fo(i, s);
+      L.push([c[i][0] + nx * (o + w), c[i][1] + ny * (o + w)]);
+      R.push([c[i][0] + nx * (o - w), c[i][1] + ny * (o - w)]);
+    }
+    return crPath(L, false, q) + crPath(R.reverse(), true, q) + 'Z';
+  }
+  // 머리 다발: pts = 가운데 선, ws = 각 점의 굵기.
+  // o.h 윤기, o.s 그늘, o.f 결 (각 [시작, 끝, 치우침, 굵기]); false 면 생략. o.lo = 뒷머리처럼 간단하게
+  function mkLock(pts, ws, o) {
+    o = o || {};
+    var mw = Math.max.apply(null, ws), q = o.q || (o.lo ? 1 : mw < 8 ? 0.2 : 0.5), v = ((pts[0][0] * 7 + pts[0][1] * 3) % 10) / 10;
+    var W = function (i, S) { var f = i / S, k = Math.min(Math.floor(f), ws.length - 2); return ws[k] + (ws[k + 1] - ws[k]) * (f - k); };
+    var body = function (S, q) {
+      var c = crSample(pts, S);
+      return band(c, 0, c.length - 1, function (i) { return W(i, S) / 2; }, function () { return 0; }, q);
+    };
+    // 윤기·그늘·결은 성기게 뽑은 점으로 (그림 크기를 줄이려고)
+    var PS = o.lo ? 1 : 2, c = crSample(pts, PS), n = c.length - 1;
+    var part = function (spec, abs) {
+      if (!spec) return '';
+      return band(c, Math.round(spec[0] * n), Math.round(spec[1] * n),
+        function (i, s) { return (abs ? spec[3] : spec[3] * W(i, PS)) * Math.sin(Math.PI * s); },
+        function (i) { return spec[2] * W(i, PS); }, 1);
+    };
+    return {
+      mw: mw,
+      b: o.lo ? body(1, 1) : body(2, q),
+      sb: o.lo ? '' : body(1, 1), // 이마 그림자용 간단한 모양
+      h: part(o.h === undefined ? [0.03 + v * 0.14, 0.42 + v * 0.22, 0.2 + v * 0.1, 0.12 + v * 0.06] : o.h),
+      h2: part(o.h2 === undefined ? (o.lo ? false : [0.55 + v * 0.1, 0.8 + v * 0.08, 0.26, 0.08]) : o.h2),
+      s: part(o.s === undefined ? [0.28, 0.97, -0.2, 0.14] : o.s),
+      f: part(o.f === undefined ? [0.1 + v * 0.1, 0.86, 0.02 - v * 0.08, 0.55] : o.f, true)
+    };
+  }
+  function flipO(o) {
+    o = o || {}; var r = { lo: o.lo };
+    ['h', 'h2', 's', 'f'].forEach(function (k) { var v = o[k]; r[k] = v ? [v[0], v[1], -v[2], v[3]] : v; });
+    return r;
+  }
+  // 왼쪽 다발과 살짝 다르게 흔들린 오른쪽 다발
+  function pair(pts, ws, o, jit) {
+    var j = jit == null ? 1 : jit;
+    var right = pts.map(function (q, i) {
+      return i === 0 ? [360 - q[0], q[1]] : [360 - q[0] + ((i * 37) % 7 - 3) * 0.6 * j, q[1] + ((i * 53) % 7 - 3) * 0.8 * j];
+    });
+    return [mkLock(pts, ws, o), mkLock(right, ws, flipO(o))];
+  }
+  function locks(list, jit, lo) { // [[pts, ws, o], ...] → 왼쪽+오른쪽 다발
+    var out = [];
+    list.forEach(function (a) {
+      var o = a[2] || {};
+      if (lo) { o = JSON.parse(JSON.stringify(o)); o.lo = true; }
+      out = out.concat(pair(a[0], a[1], o, jit));
+    });
+    return out;
+  }
+  function one(list) { return list.map(function (a) { return mkLock(a[0], a[1], a[2]); }); }
+  function drawLocks(p, c, arr, back) {
+    var hi = shade(c, 0.55), dk = shade(c, -0.34), ln = shade(c, -0.45), st = shade(c, back ? -0.42 : -0.38);
+    return arr.map(function (L) {
+      var sw = L.mw < 7 ? 0.7 : L.mw < 12 ? 0.9 : 1.2;
+      return P(L.b, 'fill="url(#' + p + (back ? 'hairB' : 'hair') + ')" stroke="' + st + '" stroke-width="' + sw + '" stroke-linejoin="round"') +
+        (L.s ? P(L.s, 'fill="' + dk + '" opacity=".36"') : '') +
+        (L.h ? P(L.h, 'fill="' + hi + '" opacity="' + (back ? '.3' : '.6') + '"') : '') +
+        (L.h2 ? P(L.h2, 'fill="' + hi + '" opacity="' + (back ? '.25' : '.45') + '"') : '') +
+        (L.f ? P(L.f, 'fill="' + ln + '" opacity=".45"') : '');
+    }).join('');
+  }
+  function arcPts(cx, cy, r0, r1, a0, a1, n) {
+    var out = [];
+    for (var i = 0; i <= n; i++) {
+      var t = i / n, a = (a0 + (a1 - a0) * t) * Math.PI / 180, r = r0 + (r1 - r0) * t;
+      out.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
+    }
+    return out;
+  }
+  // 눈썹 (머리색을 따라갑니다 — 눈 그룹 밖이라 깜빡여도 그대로)
+  var BROW = mkLock([[137.5, 120.5], [145, 114.6], [153.5, 112.6], [162.5, 113.8], [169.5, 118.2]], [0.3, 1.5, 2.1, 2.4, 2], { h: false, h2: false, s: false, f: false, q: 0.1 });
+  function brows(c) { return BOTH(P(BROW.b, 'fill="' + mixHex(shade(c, -0.42), '#4a2a2a', 0.22) + '" opacity=".9"')); }
+
   function hairDefs(p, c) {
-    return '<defs>' + VG(p + 'hair', [[0, shade(c, 0.22)], [0.45, c], [1, shade(c, -0.2)]]) + '</defs>';
+    return '<defs>' + VG(p + 'hair', [[0, shade(c, 0.2)], [0.5, c], [1, shade(c, -0.16)]]) +
+      VG(p + 'hairB', [[0, shade(c, -0.1)], [1, shade(c, -0.3)]]) +
+      '<radialGradient id="' + p + 'hairC" cx=".42" cy=".3" r=".75"><stop offset="0" stop-color="' + shade(c, 0.22) + '"/>' +
+      '<stop offset=".6" stop-color="' + c + '"/><stop offset="1" stop-color="' + shade(c, -0.18) + '"/></radialGradient></defs>';
   }
-  function hairAttr(p, c) { return 'fill="url(#' + p + 'hair)" stroke="' + shade(c, -0.38) + '" stroke-width="1.5" stroke-linejoin="round"'; }
-  function bangs(p, c) {
-    var hs = shade(c, -0.38);
-    return P(BANGS, hairAttr(p, c)) +
-      line('M180 42 Q176 68 178 86 M160 48 Q150 74 154 90 M200 48 Q210 74 198 88 M140 60 Q132 84 136 96 M220 60 Q228 84 224 96', hs, 1, 'opacity=".45"') +
-      line('M140 66 Q180 50 220 66', shade(c, 0.6), 6, 'stroke-dasharray="14 7" opacity=".75"');
+  // 앞머리가 이마에 드리우는 옅은 그림자 (얼굴 안쪽에만)
+  function capShadow(p, shapes) {
+    return '<defs><clipPath id="' + p + 'fc"><path d="' + FACE_D + '"/></clipPath></defs>' +
+      '<g clip-path="url(#' + p + 'fc)"><g transform="translate(1 4.5)" fill="#6b2f3f" opacity=".16">' +
+      shapes.map(function (d) { return '<path d="' + (d.sb || d.b || d) + '"/>'; }).join('') + '</g></g>';
   }
+  function hairAttrB(p, c) { return 'fill="url(#' + p + 'hairB)" stroke="' + shade(c, -0.42) + '" stroke-width="1.3" stroke-linejoin="round"'; }
+  function capAttr(p, c) { return 'fill="url(#' + p + 'hairC)" stroke="' + shade(c, -0.38) + '" stroke-width="1.3" stroke-linejoin="round"'; }
+  // 앞머리 한 벌: 눈썹 → 옆 다발 → 그림자 → 정수리 → 앞머리 다발
+  function frontHair(p, c, H, extra) {
+    var tops = [H.cap].concat(H.top);
+    return brows(c) + drawLocks(p, c, H.side) + capShadow(p, tops) + P(H.cap, capAttr(p, c)) +
+      drawLocks(p, c, H.top) + (extra || '');
+  }
+
+  // ---- 웨이브: 옆 가르마 + 이마를 덮는 큰 물결, 가슴 앞으로 내려온 곱슬 다발 ----
+  var WAVY = {
+    mass: sym([180, 36], [['C', 120, 34, 100, 80, 98, 150], ['C', 96, 206, 82, 250, 82, 300], ['C', 82, 350, 76, 410, 80, 456],
+      ['C', 90, 486, 122, 490, 140, 478], ['L', 180, 470]]),
+    back: locks([
+      [[[124, 60], [106, 100], [96, 150], [92, 200], [80, 250], [78, 300], [92, 350], [88, 400], [74, 440], [76, 470], [92, 480], [100, 468]], [6, 24, 30, 32, 32, 32, 30, 28, 22, 14, 6, 0]],
+      [[[140, 62], [120, 108], [108, 160], [106, 210], [94, 258], [92, 306], [106, 354], [100, 404], [88, 444], [94, 472], [110, 480], [116, 466]], [6, 22, 28, 30, 30, 30, 28, 24, 16, 9, 4, 0]],
+      [[[152, 66], [134, 120], [124, 180], [122, 230], [112, 276], [112, 326], [126, 372], [120, 418], [110, 446], [116, 466], [130, 464]], [6, 20, 24, 26, 26, 26, 24, 18, 10, 4, 0]]
+    ], 1, true),
+    side: locks([
+      // 어깨 뒤로 넘어가는 짧은 다발
+      [[[118, 110], [108, 156], [109, 200], [113, 232], [119, 250], [126, 254]], [6, 15, 17, 14, 7, 0]],
+      // 가슴 앞으로 내려와 끝이 동그랗게 말린 다발 (소매를 가리지 않게 x ≥ 112)
+      [[[122, 94], [115, 140], [117, 186], [121, 224], [124, 256], [122, 288], [125, 314], [134, 328], [142, 322], [139, 312], [132, 315]], [8, 20, 23, 23, 21, 19, 15, 10, 6, 3, 0]]
+    ]),
+    cap: 'M120 148 C113 80 138 36 180 34 C224 36 248 78 241 148 C236 124 220 108 200 100 C182 94 168 82 158 56 C146 62 132 84 126 124 Q123 138 120 148 Z',
+    top: one([
+      [[[156, 40], [140, 46], [128, 62], [121, 90], [119, 120], [120, 146]], [3, 16, 20, 20, 14, 0]],
+      [[[157, 52], [144, 62], [134, 82], [128, 108], [126, 136]], [3, 12, 16, 12, 0]],
+      [[[162, 36], [192, 38], [220, 54], [238, 84], [244, 116], [241, 150]], [3, 20, 26, 26, 18, 0]],
+      [[[160, 44], [182, 54], [204, 70], [226, 88], [240, 112], [242, 144]], [3, 20, 26, 24, 16, 0]],
+      [[[158, 54], [166, 72], [182, 88], [204, 97], [224, 104], [236, 120], [238, 140]], [3, 14, 20, 20, 16, 8, 0]]
+    ])
+  };
+  // ---- 긴 생머리: 가운데 가르마, 관자놀이를 감싸며 곧게 떨어지는 머리 ----
+  var STRAIGHT = {
+    mass: sym([180, 36], [['C', 118, 34, 98, 84, 98, 150], ['L', 92, 462], ['Q', 104, 480, 124, 474], ['L', 180, 468]]),
+    back: locks([
+      [[[122, 66], [104, 126], [98, 200], [95, 300], [93, 400], [94, 450], [100, 470], [112, 468]], [6, 28, 30, 30, 30, 26, 12, 0], { f: [0.1, 0.9, 0.1, 0.55] }],
+      [[[140, 66], [120, 136], [114, 220], [110, 320], [108, 420], [112, 462], [124, 478], [132, 470]], [6, 24, 26, 26, 26, 20, 8, 0]],
+      [[[152, 72], [136, 150], [130, 240], [126, 340], [126, 430], [134, 468], [146, 466]], [6, 22, 24, 24, 22, 10, 0]]
+    ], 0.3, true),
+    side: locks([
+      [[[121, 112], [111, 170], [110, 214], [114, 240], [120, 252], [126, 254]], [6, 16, 16, 12, 6, 0]],
+      [[[127, 100], [121, 160], [121, 218], [124, 268], [125, 312], [128, 336], [133, 342]], [8, 22, 23, 22, 19, 10, 0], { h: [0.1, 0.42, 0.12, 0.26] }]
+    ], 0.3),
+    cap: sym([180, 34], [['C', 128, 34, 112, 76, 119, 146], ['Q', 122, 134, 125, 124], ['C', 129, 108, 140, 92, 154, 82], ['C', 164, 75, 173, 71, 180, 70]]),
+    top: locks([
+      [[[179, 38], [156, 42], [134, 60], [123, 94], [120, 140]], [3, 20, 24, 18, 0], { h: [0.12, 0.5, 0.1, 0.3] }],
+      [[[180, 58], [170, 67], [158, 78], [146, 92], [137, 110], [131, 132], [128, 150]], [4, 15, 20, 20, 17, 10, 0], { h: [0.1, 0.45, 0.1, 0.28] }]
+    ], 0.3)
+  };
+  // ---- 양갈래: 높이 묶은 긴 곱슬 양갈래 + 리본, 옆으로 흐르는 부드러운 앞머리 ----
+  var TWIN = {
+    mass: sym([180, 36], [['C', 120, 34, 104, 84, 110, 140], ['Q', 118, 170, 140, 176], ['L', 180, 176]]),
+    back: locks([
+      [[[120, 80], [100, 70], [80, 78], [66, 104], [62, 150], [58, 200], [62, 250], [54, 300], [54, 350], [66, 384], [82, 384], [84, 370]], [8, 22, 30, 36, 38, 38, 36, 32, 24, 12, 4, 0]],
+      [[[122, 84], [104, 86], [90, 106], [84, 150], [82, 200], [86, 250], [78, 300], [80, 340], [94, 360], [104, 352]], [6, 18, 24, 28, 30, 30, 26, 16, 6, 0]],
+      [[[120, 78], [104, 64], [84, 62], [68, 74], [58, 96], [54, 124]], [6, 14, 18, 16, 10, 0]]
+    ], 1, true),
+    side: locks([
+      [[[127, 104], [121, 128], [122, 150], [127, 164], [134, 172]], [5, 8, 8, 5, 0]]
+    ]),
+    cap: sym([180, 34], [['C', 124, 34, 112, 70, 118, 132], ['Q', 123, 118, 127, 106], ['C', 135, 86, 154, 72, 180, 70]]),
+    top: one([
+      // 부드러운 앞머리: 끝이 짧고 둥글게 모여 뾰족하지 않아요
+      [[[122, 60], [118, 84], [120, 110], [126, 128]], [3, 14, 12, 0], { f: false }],
+      [[[238, 60], [242, 84], [240, 110], [234, 128]], [3, 14, 12, 0], { f: false }],
+      [[[190, 38], [170, 42], [152, 52], [140, 68], [134, 86], [133, 98], [135, 104]], [3, 16, 22, 22, 18, 12, 0]],
+      [[[194, 38], [212, 44], [226, 58], [232, 78], [232, 94], [229, 101]], [3, 16, 20, 18, 11, 0]],
+      [[[190, 44], [176, 52], [164, 66], [157, 82], [156, 94], [158, 99]], [3, 14, 18, 15, 9, 0]],
+      [[[196, 46], [206, 60], [212, 76], [212, 90], [209, 96]], [3, 13, 15, 10, 0]],
+      [[[192, 46], [186, 60], [180, 74], [177, 86], [178, 92]], [3, 12, 12, 8, 0]]
+    ])
+  };
+  // ---- 올림머리: 장미처럼 감아올린 쪽머리 + 곱슬 잔머리, 귀가 살짝 보여요 ----
+  var BUN = {
+    mass: sym([180, 36], [['C', 120, 34, 104, 84, 110, 140], ['Q', 118, 170, 140, 176], ['L', 180, 176]]),
+    bun: one([
+      [arcPts(210, 50, 58, 58, 176, 276, 6), [16, 16, 16, 16, 16, 16, 16], { lo: true }],
+      [arcPts(210, 50, 43, 43, 176, 280, 6), [16, 16, 16, 16, 16, 16, 16], { lo: true }],
+      [arcPts(210, 50, 29, 29, 176, 284, 6), [16, 16, 16, 16, 16, 16, 16], { lo: true }],
+      [arcPts(210, 50, 15, 15, 170, 290, 5), [14, 14, 14, 14, 14, 14], { lo: true }]
+    ]),
+    side: locks([
+      [[[126, 110], [120, 132], [125, 152], [119, 172], [121, 190], [128, 201]], [3, 5, 5, 4.5, 3, 0], { h2: false, s: false, f: false }],
+      [[[131, 118], [128, 138], [132, 154], [130, 168]], [2, 4, 3, 0], { h2: false, s: false, f: false }]
+    ], 0.5),
+    cap: sym([180, 34], [['C', 126, 34, 112, 76, 119, 138], ['Q', 124, 124, 128, 110], ['C', 134, 88, 152, 70, 180, 64]]),
+    top: one([
+      [[[127, 136], [121, 104], [128, 72], [146, 50], [168, 38], [180, 36]], [3, 16, 22, 22, 14, 3], { h: [0.15, 0.75, 0.22, 0.18] }],
+      [[[233, 136], [239, 104], [232, 72], [214, 50], [192, 38], [180, 36]], [3, 16, 22, 22, 14, 3], { h: [0.15, 0.75, -0.22, 0.18], s: [0.28, 0.97, 0.2, 0.14] }],
+      [[[132, 120], [134, 92], [148, 66], [166, 48], [179, 36]], [3, 12, 16, 12, 2], { h: [0.15, 0.8, 0.2, 0.2] }],
+      [[[228, 120], [226, 92], [212, 66], [194, 48], [181, 36]], [3, 12, 16, 12, 2], { h: [0.15, 0.8, -0.2, 0.2], s: [0.28, 0.97, 0.2, 0.14] }],
+      [[[176, 38], [156, 48], [140, 66], [130, 92], [128, 114], [134, 126]], [3, 16, 20, 18, 8, 0]]
+    ])
+  };
+  // ---- 단발: 반대쪽 옆 가르마, 끝이 안으로 말린 둥근 단발 ----
+  var BOB = {
+    mass: sym([180, 34], [['C', 114, 34, 94, 90, 96, 160], ['C', 97, 196, 104, 220, 122, 228], ['Q', 150, 234, 180, 232]]),
+    back: locks([
+      [[[124, 66], [104, 116], [96, 166], [98, 206], [112, 226], [130, 228], [136, 218]], [6, 26, 28, 26, 16, 6, 0]]
+    ], 1, true),
+    side: locks([
+      [[[120, 112], [106, 160], [102, 196], [108, 220], [124, 230], [132, 222]], [6, 20, 22, 18, 6, 0]],
+      [[[126, 98], [116, 140], [112, 184], [118, 212], [132, 226], [148, 222], [150, 212]], [8, 26, 30, 24, 14, 4, 0]]
+    ]),
+    cap: 'M240 148 C247 80 222 36 180 34 C136 36 112 78 119 148 C124 124 140 108 160 100 C178 94 192 82 202 56 C214 62 228 84 234 124 Q237 138 240 148 Z',
+    top: one([
+      [[[204, 40], [220, 46], [232, 62], [239, 90], [241, 120], [240, 146]], [3, 16, 20, 20, 14, 0]],
+      [[[203, 52], [216, 62], [226, 82], [232, 108], [234, 136]], [3, 12, 16, 12, 0]],
+      [[[198, 36], [168, 38], [140, 54], [122, 84], [116, 116], [119, 150]], [3, 20, 26, 26, 18, 0]],
+      [[[200, 44], [178, 54], [156, 70], [134, 88], [120, 112], [118, 144]], [3, 20, 26, 24, 16, 0]],
+      [[[202, 54], [194, 72], [178, 88], [156, 97], [136, 104], [124, 120], [122, 140]], [3, 14, 20, 20, 16, 8, 0]]
+    ])
+  };
+  function tieBow(x, y) {
+    var st = 'fill="#ff9ccb" stroke="#d2407f" stroke-width="1.1" stroke-linejoin="round"';
+    return P('M' + (x - 3) + ' ' + (y + 2) + ' C' + (x - 12) + ' ' + (y + 16) + ' ' + (x - 12) + ' ' + (y + 30) + ' ' + (x - 22) + ' ' + (y + 44) +
+        ' L' + (x - 15) + ' ' + (y + 42) + ' L' + (x - 14) + ' ' + (y + 50) + ' C' + (x - 6) + ' ' + (y + 34) + ' ' + (x - 6) + ' ' + (y + 18) + ' ' + (x + 1) + ' ' + (y + 4) + 'Z', st) +
+      P('M' + (x - 1) + ' ' + (y + 3) + ' C' + (x - 2) + ' ' + (y + 18) + ' ' + (x - 6) + ' ' + (y + 32) + ' ' + (x - 6) + ' ' + (y + 50) +
+        ' L' + (x) + ' ' + (y + 46) + ' L' + (x + 3) + ' ' + (y + 53) + ' C' + (x + 2) + ' ' + (y + 34) + ' ' + (x + 5) + ' ' + (y + 18) + ' ' + (x + 3) + ' ' + (y + 3) + 'Z', st) +
+      bow(x, y, 9, '#ff7fb8');
+  }
+  // 정수리 머리 모양은 한 번만 계산해 둡니다
+  var BUN_E = '<ellipse cx="180" cy="24" rx="28" ry="20"';
   var HAIRS = {
     wavy: {
       name: '웨이브',
-      back: function (p, c) {
-        return P(sym([180, 34], [['C', 112, 34, 88, 96, 94, 168], ['C', 98, 226, 76, 266, 88, 320], ['C', 100, 374, 70, 412, 82, 464],
-          ['C', 90, 504, 128, 512, 142, 486], ['L', 180, 480]]), hairAttr(p, c)) +
-          BOTH(line('M112 150 C104 220 94 262 102 320 C108 372 90 412 98 462 M122 250 C114 300 118 340 110 390', shade(c, -0.38), 1.2, 'opacity=".55"'));
-      },
-      front: function (p, c) {
-        var lock = P('M130 96 C112 140 108 190 118 236 C126 270 104 300 114 338 C120 362 134 352 134 330 C128 300 144 270 137 236 C130 200 136 150 143 118Z', hairAttr(p, c)) +
-          line('M126 150 C120 200 128 240 122 290', shade(c, -0.38), 1, 'opacity=".5"');
-        return BOTH(lock) + bangs(p, c);
-      }
+      back: function (p, c) { return P(WAVY.mass, hairAttrB(p, c)) + drawLocks(p, c, WAVY.back, true); },
+      front: function (p, c) { return frontHair(p, c, WAVY); }
     },
     straight: {
       name: '긴 생머리',
-      back: function (p, c) {
-        return P(sym([180, 34], [['C', 112, 34, 92, 96, 96, 168], ['L', 90, 470], ['Q', 100, 480, 110, 474], ['Q', 120, 484, 132, 478], ['L', 180, 474]]), hairAttr(p, c)) +
-          BOTH(line('M110 170 L104 460 M122 250 L118 420', shade(c, -0.38), 1.2, 'opacity=".5"'));
-      },
-      front: function (p, c) {
-        return BOTH(P('M130 96 C116 150 114 220 116 334 L130 340 C132 250 137 170 143 118Z', hairAttr(p, c))) + bangs(p, c);
-      }
+      back: function (p, c) { return P(STRAIGHT.mass, hairAttrB(p, c)) + drawLocks(p, c, STRAIGHT.back, true); },
+      front: function (p, c) { return frontHair(p, c, STRAIGHT); }
     },
     twin: {
       name: '양갈래',
-      back: function (p, c) {
-        var tail = P('M128 82 C76 90 56 160 64 240 C70 300 48 360 60 420 C68 458 94 468 104 444 C92 404 112 352 104 296 C98 236 112 160 138 110Z', hairAttr(p, c)) +
-          line('M100 120 C80 180 84 240 80 300 C76 360 70 400 82 440', shade(c, -0.38), 1.2, 'opacity=".55"');
-        return BOTH(tail) + P(sym([180, 34], [['C', 112, 34, 94, 96, 100, 170], ['Q', 110, 198, 130, 208], ['L', 180, 208]]), hairAttr(p, c));
-      },
-      front: function (p, c) {
-        return BOTH(P('M130 96 C118 130 118 170 126 204 C132 178 136 140 143 118Z', hairAttr(p, c))) + bangs(p, c) +
-          BOTH('<circle cx="128" cy="90" r="10" fill="#ff5fae" stroke="#c2188a" stroke-width="1.5"/>' + bow(122, 82, 7, '#ff8fc8'));
-      }
+      back: function (p, c) { return drawLocks(p, c, TWIN.back, true) + P(TWIN.mass, hairAttrB(p, c)); },
+      front: function (p, c) { return frontHair(p, c, TWIN, tieBow(120, 80) + MIR(tieBow(120, 80))); }
     },
     bun: {
       name: '올림머리',
-      back: function (p, c) {
-        return '<circle cx="180" cy="30" r="32" ' + hairAttr(p, c) + '/>' +
-          line('M160 20 Q180 6 200 20 M156 36 Q180 50 204 34', shade(c, -0.38), 1.2, 'opacity=".6"') +
-          P(sym([180, 34], [['C', 112, 34, 96, 96, 102, 170], ['Q', 112, 196, 132, 204], ['L', 180, 204]]), hairAttr(p, c));
-      },
+      // 귀는 몸(bodySVG)의 <defs> 에 있는 것을 가져다 씁니다 — 몸보다 먼저 그려져 얼굴 뒤에 숨어요
+      back: function (p, c) { return P(BUN.mass, hairAttrB(p, c)) + '<use href="#' + p.replace(/h$/, 'b') + 'ears"/>'; },
       front: function (p, c) {
-        return BOTH(P('M130 100 C116 140 118 200 128 252 C130 230 136 180 141 120Z', hairAttr(p, c))) + bangs(p, c) +
-          line('M162 8 Q180 -2 198 8', shade(c, 0.6), 4, 'opacity=".7"');
+        return frontHair(p, c, BUN,
+          '<defs><clipPath id="' + p + 'bunc">' + BUN_E + '/></clipPath></defs>' + BUN_E + ' fill="url(#' + p + 'hairB)"/>' +
+          '<g clip-path="url(#' + p + 'bunc)">' + drawLocks(p, c, BUN.bun) + '</g>' + BUN_E + ' fill="none" stroke="' + shade(c, -0.38) + '" stroke-width="1.4"/>');
       }
     },
     bob: {
       name: '단발',
-      back: function (p, c) {
-        return P(sym([180, 34], [['C', 112, 34, 92, 96, 98, 170], ['Q', 100, 208, 118, 224], ['Q', 150, 230, 180, 228]]), hairAttr(p, c));
-      },
-      front: function (p, c) {
-        return BOTH(P('M128 100 C110 140 110 192 124 224 C132 198 136 150 143 118Z', hairAttr(p, c))) + bangs(p, c);
-      }
+      back: function (p, c) { return P(BOB.mass, hairAttrB(p, c)) + drawLocks(p, c, BOB.back, true); },
+      front: function (p, c) { return frontHair(p, c, BOB); }
     }
   };
   var HAIR_ORDER = ['wavy', 'straight', 'twin', 'bun', 'bob'];
