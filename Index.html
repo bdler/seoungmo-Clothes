@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>👑 공주님 옷 입히기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --pink: #ff6fae;
+      --pink-dark: #d6437f;
+      --pink-light: #ffe3f0;
+      --purple: #9b7bff;
+      --cream: #fff8fc;
+      --text: #5a2a4a;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 10%, #fff 0 2px, transparent 3px) 0 0 / 40px 40px,
+        linear-gradient(160deg, #ffd6ea 0%, #e9dcff 55%, #d6ecff 100%);
+      min-height: 100vh;
+    }
+    header {
+      text-align: center;
+      padding: 14px 12px 4px;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(26px, 5vw, 40px);
+      color: #fff;
+      text-shadow: 0 3px 0 var(--pink-dark), 0 0 12px rgba(214, 67, 127, .5);
+      letter-spacing: 1px;
+    }
+    header p { margin: 4px 0 0; font-size: 16px; opacity: .8; }
+
+    .game {
+      display: flex;
+      gap: 18px;
+      max-width: 1040px;
+      margin: 10px auto 24px;
+      padding: 0 16px;
+      align-items: flex-start;
+    }
+
+    /* ---------- 무대 ---------- */
+    .stage-card {
+      flex: 0 0 380px;
+      background: #fff;
+      border-radius: 28px;
+      padding: 12px;
+      box-shadow: 0 10px 30px rgba(155, 80, 140, .25);
+      border: 4px solid #ffc2df;
+      position: sticky;
+      top: 10px;
+    }
+    .stage-wrap { position: relative; border-radius: 20px; overflow: hidden; }
+    #stage { display: block; width: 100%; height: auto; }
+    #stage.pop { animation: pop .35s ease; }
+    @keyframes pop {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.025) translateY(-4px); }
+      100% { transform: scale(1); }
+    }
+    .sparkle {
+      position: absolute;
+      pointer-events: none;
+      font-size: 22px;
+      animation: sparkle .9s ease-out forwards;
+    }
+    @keyframes sparkle {
+      0% { opacity: 0; transform: scale(.2) rotate(0); }
+      30% { opacity: 1; transform: scale(1.2) rotate(40deg); }
+      100% { opacity: 0; transform: scale(.6) translateY(-30px) rotate(90deg); }
+    }
+    .name-row {
+      display: flex; gap: 8px; align-items: center; margin-top: 10px;
+    }
+    .name-row label { white-space: nowrap; }
+    .name-row input {
+      flex: 1; min-width: 0;
+      font-family: inherit; font-size: 17px; color: var(--text);
+      border: 3px solid #ffc2df; border-radius: 14px; padding: 6px 10px;
+      outline: none;
+    }
+    .name-row input:focus { border-color: var(--pink); }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .btn {
+      font-family: inherit;
+      font-size: 16px;
+      border: none;
+      border-radius: 16px;
+      padding: 10px 6px;
+      cursor: pointer;
+      color: #fff;
+      background: var(--pink);
+      box-shadow: 0 4px 0 var(--pink-dark);
+      transition: transform .08s, box-shadow .08s;
+    }
+    .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--pink-dark); }
+    .btn.purple { background: var(--purple); box-shadow: 0 4px 0 #6b4fd1; }
+    .btn.purple:active { box-shadow: 0 1px 0 #6b4fd1; }
+    .btn.sky { background: #52b6f5; box-shadow: 0 4px 0 #2a86c4; }
+    .btn.sky:active { box-shadow: 0 1px 0 #2a86c4; }
+    .btn.gray { background: #b9a7b6; box-shadow: 0 4px 0 #8c7a89; }
+
+    /* ---------- 옷장 ---------- */
+    .closet {
+      flex: 1;
+      min-width: 0;
+      background: rgba(255, 255, 255, .85);
+      border-radius: 28px;
+      padding: 14px;
+      box-shadow: 0 10px 30px rgba(155, 80, 140, .2);
+      border: 4px solid #e2d4ff;
+    }
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+      gap: 8px;
+    }
+    .tab {
+      font-family: inherit;
+      background: var(--cream);
+      border: 3px solid #f3d3e6;
+      border-radius: 16px;
+      padding: 6px 2px;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 14px;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      transition: transform .1s;
+    }
+    .tab .emo { font-size: 24px; line-height: 1.1; }
+    .tab:hover { transform: translateY(-2px); }
+    .tab.active {
+      background: linear-gradient(180deg, #ff9cc9, #ff6fae);
+      border-color: var(--pink-dark);
+      color: #fff;
+    }
+    .panel-title {
+      margin: 16px 4px 8px;
+      font-size: 20px;
+    }
+    .items {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+      gap: 10px;
+    }
+    .item {
+      font-family: inherit;
+      background: #fff;
+      border: 3px solid #f0e2ee;
+      border-radius: 18px;
+      padding: 10px 4px 8px;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 15px;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      transition: transform .1s, border-color .1s;
+    }
+    .item .emo { font-size: 34px; line-height: 1.1; }
+    .item:hover { transform: translateY(-3px); border-color: #ffc2df; }
+    .item.selected {
+      border-color: var(--pink);
+      background: var(--pink-light);
+      box-shadow: 0 0 0 3px rgba(255, 111, 174, .25);
+    }
+    .colors {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      padding: 4px;
+    }
+    .swatch {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 2px #e6cfe0, 0 3px 6px rgba(0, 0, 0, .12);
+      cursor: pointer;
+      transition: transform .1s;
+    }
+    .swatch:hover { transform: scale(1.1); }
+    .swatch.selected { box-shadow: 0 0 0 4px var(--pink), 0 3px 6px rgba(0, 0, 0, .15); transform: scale(1.1); }
+
+    /* ---------- 팝업 ---------- */
+    .modal {
+      position: fixed; inset: 0;
+      background: rgba(80, 30, 70, .45);
+      display: none;
+      align-items: center; justify-content: center;
+      padding: 16px;
+      z-index: 50;
+    }
+    .modal.open { display: flex; }
+    .modal-box {
+      background: #fff;
+      border-radius: 26px;
+      padding: 18px;
+      width: min(560px, 100%);
+      max-height: 92vh;
+      overflow: auto;
+      border: 4px solid #ffc2df;
+      text-align: center;
+    }
+    .modal-box h2 { margin: 0 0 12px; color: var(--pink-dark); }
+    .slots {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .slot {
+      border: 3px dashed #f3c0dc;
+      border-radius: 18px;
+      padding: 8px;
+      display: flex; flex-direction: column; gap: 6px; align-items: stretch;
+    }
+    .slot .thumb {
+      aspect-ratio: 300 / 520;
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--pink-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px;
+    }
+    .slot .thumb svg { width: 100%; height: 100%; display: block; }
+    .slot .label { font-size: 14px; min-height: 1.2em; }
+    .slot .btn { font-size: 14px; padding: 7px 4px; }
+    #photoImg { max-width: 100%; max-height: 60vh; border-radius: 16px; }
+    .modal-actions { display: flex; gap: 8px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
+    .modal-actions .btn { padding: 10px 18px; text-decoration: none; }
+    .hint { font-size: 14px; opacity: .75; margin: 8px 0 0; }
+
+    .toast {
+      position: fixed;
+      left: 50%; bottom: 24px;
+      transform: translateX(-50%) translateY(20px);
+      background: #fff;
+      color: var(--pink-dark);
+      border: 3px solid #ffc2df;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 17px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s, transform .25s;
+      z-index: 60;
+      white-space: nowrap;
+      box-shadow: 0 6px 18px rgba(155, 80, 140, .25);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 760px) {
+      .game { flex-direction: column; align-items: stretch; }
+      .stage-card { flex: none; position: static; max-width: 420px; width: 100%; margin: 0 auto; }
+      .items { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>👑 공주님 옷 입히기 👑</h1>
+    <p>옷장에서 마음에 드는 옷을 골라 공주님을 꾸며 주세요!</p>
+  </header>
+
+  <main class="game">
+    <section class="stage-card">
+      <div class="stage-wrap" id="stageWrap">
+        <svg id="stage" viewBox="0 0 300 520" xmlns="http://www.w3.org/2000/svg" aria-label="공주님"></svg>
+      </div>
+      <div class="name-row">
+        <label for="nameInput">공주님 이름</label>
+        <input id="nameInput" maxlength="12" placeholder="예: 서영">
+      </div>
+      <div class="actions">
+        <button class="btn purple" id="randomBtn">🎲 랜덤</button>
+        <button class="btn gray" id="resetBtn">🔄 처음으로</button>
+        <button class="btn sky" id="photoBtn">📸 사진</button>
+        <button class="btn" id="saveBtn" style="grid-column: span 3">💾 저장하기 / 📂 불러오기</button>
+      </div>
+    </section>
+
+    <section class="closet">
+      <div class="tabs" id="tabs"></div>
+      <h2 class="panel-title" id="panelTitle"></h2>
+      <div class="items" id="items"></div>
+      <h2 class="panel-title" id="colorTitle">🎨 색깔</h2>
+      <div class="colors" id="colors"></div>
+    </section>
+  </main>
+
+  <!-- 저장/불러오기 -->
+  <div class="modal" id="saveModal">
+    <div class="modal-box">
+      <h2>💾 옷장 서랍</h2>
+      <div class="slots" id="slots"></div>
+      <p class="hint" id="saveHint"></p>
+      <div class="modal-actions">
+        <button class="btn gray" data-close>닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 사진 -->
+  <div class="modal" id="photoModal">
+    <div class="modal-box">
+      <h2>📸 공주님 사진</h2>
+      <img id="photoImg" alt="공주님 사진">
+      <p class="hint">사진이 저장되지 않으면 사진을 길게 누르거나 오른쪽 클릭해서 저장하세요.</p>
+      <div class="modal-actions">
+        <a class="btn sky" id="photoDownload" download="princess.png">⬇️ 내려받기</a>
+        <button class="btn gray" data-close>닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+  // =====================================================================
+  //  도우미 함수
+  // =====================================================================
+  function shade(hex, p) {
+    var n = parseInt(hex.slice(1), 16);
+    var r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+    var t = p < 0 ? 0 : 255, a = Math.abs(p);
+    r = Math.round((t - r) * a + r);
+    g = Math.round((t - g) * a + g);
+    b = Math.round((t - b) * a + b);
+    return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+  }
+  function starPath(cx, cy, R, r) {
+    var pts = [];
+    for (var i = 0; i < 10; i++) {
+      var rad = i % 2 === 0 ? R : r;
+      var ang = -Math.PI / 2 + i * Math.PI / 5;
+      pts.push((cx + rad * Math.cos(ang)).toFixed(1) + ' ' + (cy + rad * Math.sin(ang)).toFixed(1));
+    }
+    return 'M' + pts.join(' L') + 'Z';
+  }
+  function flower(x, y, color, size) {
+    var s = size || 4, out = '';
+    for (var i = 0; i < 5; i++) {
+      var a = i * Math.PI * 2 / 5 - Math.PI / 2;
+      out += '<circle cx="' + (x + Math.cos(a) * s).toFixed(1) + '" cy="' + (y + Math.sin(a) * s).toFixed(1) +
+        '" r="' + s + '" fill="' + color + '"/>';
+    }
+    return out + '<circle cx="' + x + '" cy="' + y + '" r="' + (s * 0.8).toFixed(1) + '" fill="#ffe066"/>';
+  }
+  function escapeXml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  // 반짝이 위치 (항상 같은 모양이 나오도록 고정)
+  var NIGHT_STARS = [];
+  (function () {
+    var seed = 7;
+    function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+    for (var i = 0; i < 40; i++) NIGHT_STARS.push([rnd() * 300, rnd() * 330, 0.6 + rnd() * 1.8]);
+  })();
+
+  // =====================================================================
+  //  배경
+  // =====================================================================
+  var BG = {
+    castle: function (g) {
+      return '<defs><linearGradient id="' + g + 'bg" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="#ffc9e3"/><stop offset="1" stop-color="#fff3f9"/></linearGradient></defs>' +
+        '<rect width="300" height="520" fill="url(#' + g + 'bg)"/>' +
+        '<g fill="#fff" opacity=".9"><circle cx="40" cy="60" r="16"/><circle cx="60" cy="54" r="20"/><circle cx="82" cy="62" r="14"/>' +
+        '<circle cx="230" cy="90" r="14"/><circle cx="250" cy="82" r="18"/><circle cx="270" cy="92" r="12"/></g>' +
+        '<g fill="#f3c1df" stroke="#e7a3cb" stroke-width="2">' +
+        '<rect x="14" y="200" width="50" height="260"/><rect x="236" y="200" width="50" height="260"/>' +
+        '<rect x="50" y="260" width="200" height="200"/><rect x="118" y="150" width="64" height="120"/></g>' +
+        '<g fill="#c99aea" stroke="#a979d1" stroke-width="2">' +
+        '<path d="M8 202 L39 140 L70 202Z"/><path d="M230 202 L261 140 L292 202Z"/><path d="M112 152 L150 80 L188 152Z"/></g>' +
+        '<g fill="#ffe3f0"><path d="M39 140 L39 120 L54 126 L39 132Z"/><path d="M261 140 L261 120 L276 126 L261 132Z"/><path d="M150 80 L150 56 L168 63 L150 70Z"/></g>' +
+        '<g fill="#fff6c8" stroke="#e7a3cb" stroke-width="2">' +
+        '<path d="M30 240 Q39 226 48 240 L48 262 L30 262Z"/><path d="M252 240 Q261 226 270 240 L270 262 L252 262Z"/>' +
+        '<path d="M140 180 Q150 166 160 180 L160 206 L140 206Z"/></g>' +
+        '<g fill="#fff" opacity=".7"><path d="' + starPath(100, 110, 6, 2.5) + '"/><path d="' + starPath(210, 150, 5, 2) + '"/></g>' +
+        '<rect y="450" width="300" height="70" fill="#f7b3d4"/>' +
+        '<path d="M0 450 H300" stroke="#eb95c0" stroke-width="3"/>';
+    },
+    garden: function (g) {
+      var fl = '';
+      var spots = [[20, 470, '#ff8fc7'], [55, 492, '#fff27a'], [90, 478, '#b5a1ff'], [215, 482, '#ff8fc7'],
+        [250, 470, '#ff6b6b'], [280, 494, '#fff27a'], [35, 505, '#b5a1ff'], [265, 510, '#ff8fc7']];
+      spots.forEach(function (f) { fl += flower(f[0], f[1], f[2], 4.5); });
+      return '<defs><linearGradient id="' + g + 'bg" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="#9fdcff"/><stop offset="1" stop-color="#e6f8ff"/></linearGradient></defs>' +
+        '<rect width="300" height="520" fill="url(#' + g + 'bg)"/>' +
+        '<circle cx="250" cy="60" r="28" fill="#ffe066"/><circle cx="250" cy="60" r="38" fill="#ffe066" opacity=".3"/>' +
+        '<g fill="#fff"><circle cx="50" cy="80" r="16"/><circle cx="72" cy="72" r="20"/><circle cx="94" cy="82" r="14"/></g>' +
+        '<ellipse cx="60" cy="400" rx="140" ry="80" fill="#9ee29b"/><ellipse cx="260" cy="410" rx="140" ry="85" fill="#8bd88a"/>' +
+        '<g fill="#6cc46f"><circle cx="30" cy="360" r="26"/><circle cx="60" cy="350" r="30"/><circle cx="270" cy="355" r="30"/><circle cx="240" cy="365" r="24"/></g>' +
+        flower(45, 352, '#ff8fc7', 4) + flower(262, 350, '#fff27a', 4) + flower(70, 370, '#ffffff', 3.5) +
+        '<rect y="440" width="300" height="80" fill="#7ccf7b"/>' + fl;
+    },
+    night: function (g) {
+      var st = '';
+      NIGHT_STARS.forEach(function (s) {
+        st += '<circle cx="' + s[0].toFixed(1) + '" cy="' + s[1].toFixed(1) + '" r="' + s[2].toFixed(1) + '" fill="#fff" opacity=".85"/>';
+      });
+      return '<defs><linearGradient id="' + g + 'bg" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="#1c1f52"/><stop offset="1" stop-color="#5a3f9a"/></linearGradient></defs>' +
+        '<rect width="300" height="520" fill="url(#' + g + 'bg)"/>' + st +
+        '<circle cx="235" cy="75" r="30" fill="#fff5c2"/><circle cx="248" cy="66" r="28" fill="#2a2b64" opacity=".95"/>' +
+        '<path d="' + starPath(60, 60, 9, 4) + '" fill="#ffe066"/><path d="' + starPath(120, 30, 6, 2.5) + '" fill="#ffe066"/>' +
+        '<rect y="440" width="300" height="80" fill="#3b2c6e"/>' +
+        '<g fill="#6b56b5">' +
+        '<rect x="0" y="420" width="300" height="10"/>' +
+        '<rect x="10" y="430" width="8" height="18"/><rect x="40" y="430" width="8" height="18"/><rect x="70" y="430" width="8" height="18"/>' +
+        '<rect x="222" y="430" width="8" height="18"/><rect x="252" y="430" width="8" height="18"/><rect x="282" y="430" width="8" height="18"/></g>';
+    },
+    ballroom: function (g) {
+      var tiles = '';
+      for (var i = 0; i < 10; i++) {
+        tiles += '<rect x="' + (i * 30) + '" y="440" width="30" height="80" fill="' + (i % 2 ? '#f6e3c4' : '#fff4e0') + '"/>';
+      }
+      var col = function (x) {
+        return '<rect x="' + x + '" y="60" width="34" height="380" fill="#fff" stroke="#e8c77a" stroke-width="2"/>' +
+          '<rect x="' + (x - 6) + '" y="52" width="46" height="14" rx="3" fill="#f3d58c"/>' +
+          '<rect x="' + (x - 6) + '" y="430" width="46" height="14" rx="3" fill="#f3d58c"/>' +
+          '<path d="M' + (x + 9) + ' 70 V430 M' + (x + 17) + ' 70 V430 M' + (x + 25) + ' 70 V430" stroke="#f0e2c0" stroke-width="2"/>';
+      };
+      var drops = '';
+      for (var j = 0; j < 7; j++) {
+        var dx = 115 + j * 11.6;
+        drops += '<line x1="' + dx + '" y1="44" x2="' + dx + '" y2="' + (58 + (j % 2) * 8) + '" stroke="#fff3b0" stroke-width="1.5"/>' +
+          '<circle cx="' + dx + '" cy="' + (60 + (j % 2) * 8) + '" r="3" fill="#fffbe0" stroke="#f0cf60"/>';
+      }
+      return '<defs><linearGradient id="' + g + 'bg" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="#ffe8b8"/><stop offset="1" stop-color="#fff6e3"/></linearGradient></defs>' +
+        '<rect width="300" height="520" fill="url(#' + g + 'bg)"/>' +
+        '<path d="M0 0 H300 V36 Q270 60 240 36 Q210 60 180 36 Q150 60 120 36 Q90 60 60 36 Q30 60 0 36Z" fill="#c9304f"/>' +
+        col(12) + col(254) +
+        '<line x1="150" y1="0" x2="150" y2="30" stroke="#d9a21b" stroke-width="2"/>' +
+        '<path d="M108 38 Q150 58 192 38 L186 32 Q150 46 114 32Z" fill="#f3c34a" stroke="#d9a21b"/>' + drops +
+        tiles + '<path d="M110 440 L190 440 L230 520 L70 520Z" fill="#c9304f"/>' +
+        '<path d="M110 440 L190 440" stroke="#f3c34a" stroke-width="3"/>';
+    }
+  };
+
+  // =====================================================================
+  //  머리 모양 (뒷머리 / 앞머리)
+  // =====================================================================
+  var BANGS = 'M104 108 Q102 58 150 58 Q198 58 196 108 Q186 88 172 82 Q164 98 150 100 Q138 90 130 82 Q114 90 104 108Z';
+  function hairPath(d, c) {
+    return '<path d="' + d + '" fill="' + c + '" stroke="' + shade(c, -0.25) + '" stroke-width="2" stroke-linejoin="round"/>';
+  }
+  function hairShine(c) {
+    return '<path d="M122 72 Q134 64 146 66" stroke="' + shade(c, 0.5) + '" stroke-width="4" fill="none" stroke-linecap="round" opacity=".8"/>';
+  }
+  var HAIR = {
+    long: {
+      back: function (c) {
+        return hairPath('M98 105 Q92 48 150 48 Q208 48 202 105 Q212 200 212 290 Q180 306 150 298 Q120 306 88 290 Q88 200 98 105Z', c);
+      },
+      front: function (c) {
+        return hairPath(BANGS, c) +
+          hairPath('M104 100 Q96 145 106 176 Q114 145 113 108Z', c) +
+          hairPath('M196 100 Q204 145 194 176 Q186 145 187 108Z', c) + hairShine(c);
+      }
+    },
+    wavy: {
+      back: function (c) {
+        return hairPath('M98 105 Q92 48 150 48 Q208 48 202 105 Q222 140 205 175 Q226 210 208 245 Q230 280 206 314 Q150 326 94 314 Q70 280 92 245 Q74 210 95 175 Q78 140 98 105Z', c);
+      },
+      front: function (c) {
+        return hairPath(BANGS, c) +
+          hairPath('M104 100 Q92 130 104 150 Q94 168 106 186 Q116 160 113 108Z', c) +
+          hairPath('M196 100 Q208 130 196 150 Q206 168 194 186 Q184 160 187 108Z', c) + hairShine(c);
+      }
+    },
+    twin: {
+      back: function (c) {
+        return hairPath('M103 92 Q58 120 68 200 Q74 252 58 296 Q98 266 100 200 Q102 150 112 104Z', c) +
+          hairPath('M197 92 Q242 120 232 200 Q226 252 242 296 Q202 266 200 200 Q198 150 188 104Z', c) +
+          hairPath('M100 112 Q94 52 150 52 Q206 52 200 112Z', c);
+      },
+      front: function (c) {
+        return hairPath(BANGS, c) + hairShine(c) +
+          '<g fill="#ff6fae" stroke="#d6437f" stroke-width="1.5">' +
+          '<path d="M104 94 L90 84 L92 104Z"/><path d="M104 94 L116 82 L118 102Z"/><circle cx="104" cy="94" r="4.5"/>' +
+          '<path d="M196 94 L210 84 L208 104Z"/><path d="M196 94 L184 82 L182 102Z"/><circle cx="196" cy="94" r="4.5"/></g>';
+      }
+    },
+    bun: {
+      back: function (c) {
+        return hairPath('M150 26 A24 24 0 1 1 149.9 26Z', c) +
+          '<path d="M134 44 Q150 36 166 44" stroke="' + shade(c, -0.25) + '" stroke-width="2" fill="none"/>' +
+          hairPath('M100 112 Q94 54 150 54 Q206 54 200 112Z', c);
+      },
+      front: function (c) {
+        return hairPath('M104 112 Q104 60 150 58 Q196 60 196 112 Q182 80 152 78 Q128 80 114 96 Q108 102 104 112Z', c) +
+          hairPath('M104 104 Q100 130 108 150 Q112 128 110 108Z', c) +
+          hairPath('M196 104 Q200 130 192 150 Q188 128 190 108Z', c) + hairShine(c);
+      }
+    },
+    bob: {
+      back: function (c) {
+        return hairPath('M96 112 Q90 52 150 52 Q210 52 204 112 Q210 160 200 182 Q150 192 100 182 Q90 160 96 112Z', c);
+      },
+      front: function (c) {
+        return hairPath('M104 110 Q102 58 150 58 Q198 58 196 110 Q170 92 150 86 Q130 92 104 110Z', c) +
+          hairPath('M103 104 Q95 150 108 176 Q117 150 114 110Z', c) +
+          hairPath('M197 104 Q205 150 192 176 Q183 150 186 110Z', c) + hairShine(c);
+      }
+    },
+    pony: {
+      back: function (c) {
+        return hairPath('M176 62 Q246 70 238 160 Q232 232 252 280 Q206 262 202 184 Q200 124 180 92Z', c) +
+          hairPath('M100 112 Q94 52 150 52 Q206 52 200 112Z', c);
+      },
+      front: function (c) {
+        return hairPath('M104 110 Q102 58 150 58 Q198 58 196 110 Q190 80 160 74 Q150 92 104 110Z', c) +
+          '<circle cx="186" cy="66" r="6" fill="#ff6fae" stroke="#d6437f" stroke-width="1.5"/>' + hairShine(c);
+      }
+    }
+  };
+
+  // =====================================================================
+  //  몸, 얼굴
+  // =====================================================================
+  function body(skin) {
+    var d = shade(skin, -0.18);
+    return '<path d="M128 182 Q106 236 100 300" fill="none" stroke="' + d + '" stroke-width="15" stroke-linecap="round"/>' +
+      '<path d="M172 182 Q194 236 200 300" fill="none" stroke="' + d + '" stroke-width="15" stroke-linecap="round"/>' +
+      '<path d="M128 182 Q106 236 100 300" fill="none" stroke="' + skin + '" stroke-width="12" stroke-linecap="round"/>' +
+      '<path d="M172 182 Q194 236 200 300" fill="none" stroke="' + skin + '" stroke-width="12" stroke-linecap="round"/>' +
+      '<g fill="' + skin + '" stroke="' + d + '" stroke-width="1.5">' +
+      '<rect x="135" y="250" width="12" height="228" rx="5"/><rect x="153" y="250" width="12" height="228" rx="5"/>' +
+      '<rect x="141" y="146" width="18" height="36"/>' +
+      '<path d="M124 176 Q150 168 176 176 L170 254 L130 254Z"/></g>';
+  }
+  function hands(skin) {
+    var d = shade(skin, -0.18);
+    return '<g fill="' + skin + '" stroke="' + d + '" stroke-width="1.5">' +
+      '<circle cx="100" cy="302" r="8"/><circle cx="200" cy="302" r="8"/></g>';
+  }
+  function head(skin) {
+    var d = shade(skin, -0.18);
+    return '<g fill="' + skin + '" stroke="' + d + '" stroke-width="1.5">' +
+      '<ellipse cx="104" cy="118" rx="7" ry="10"/><ellipse cx="196" cy="118" rx="7" ry="10"/>' +
+      '<ellipse cx="150" cy="112" rx="46" ry="48"/></g>';
+  }
+  var EYE_DARK = '#3b2440';
+  function eye(x, y, big, side) {
+    var k = big ? 1.2 : 1;
+    var flick = side < 0 ? 'M' + (x - 9) + ' ' + (y - 6) + ' L' + (x - 13) + ' ' + (y - 10)
+                         : 'M' + (x + 9) + ' ' + (y - 6) + ' L' + (x + 13) + ' ' + (y - 10);
+    return '<ellipse cx="' + x + '" cy="' + y + '" rx="' + (7.5 * k) + '" ry="' + (9.5 * k) + '" fill="' + EYE_DARK + '"/>' +
+      '<ellipse cx="' + x + '" cy="' + (y + 2) + '" rx="' + (5.5 * k) + '" ry="' + (6.5 * k) + '" fill="#7a52c7"/>' +
+      '<circle cx="' + (x - 2.5) + '" cy="' + (y - 3) + '" r="2.8" fill="#fff"/>' +
+      '<circle cx="' + (x + 2.5) + '" cy="' + (y + 4) + '" r="1.3" fill="#fff"/>' +
+      '<path d="M' + (x - 9) + ' ' + (y - 6) + ' Q' + x + ' ' + (y - 14 * k) + ' ' + (x + 9) + ' ' + (y - 6) + ' ' + flick +
+      '" stroke="' + EYE_DARK + '" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
+  }
+  function closedEye(x, y) {
+    return '<path d="M' + (x - 8) + ' ' + (y + 1) + ' Q' + x + ' ' + (y - 8) + ' ' + (x + 8) + ' ' + (y + 1) +
+      '" stroke="' + EYE_DARK + '" stroke-width="3" fill="none" stroke-linecap="round"/>';
+  }
+  var BROWS = '<path d="M124 98 Q132 93 140 97 M160 97 Q168 93 176 98" stroke="#8a5a4a" stroke-width="2" fill="none" stroke-linecap="round"/>';
+  var BLUSH = '<ellipse cx="122" cy="133" rx="8" ry="4.5" fill="#ff8fb5" opacity=".55"/>' +
+              '<ellipse cx="178" cy="133" rx="8" ry="4.5" fill="#ff8fb5" opacity=".55"/>';
+  var NOSE = '<path d="M149 127 Q151 129 149 131" stroke="#d99a8a" stroke-width="1.5" fill="none" stroke-linecap="round"/>';
+  var FACE = {
+    smile: function () {
+      return BROWS + eye(132, 115, false, -1) + eye(168, 115, false, 1) + BLUSH + NOSE +
+        '<path d="M142 139 Q150 147 158 139" stroke="#c2456b" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
+    },
+    wink: function () {
+      return BROWS + eye(132, 115, false, -1) + closedEye(168, 116) + BLUSH + NOSE +
+        '<path d="M141 137 Q150 150 159 137Z" fill="#e0567f" stroke="#c2456b" stroke-width="1.5" stroke-linejoin="round"/>' +
+        '<path d="' + starPath(188, 102, 5, 2) + '" fill="#ffd24a"/>';
+    },
+    happy: function () {
+      return BROWS + closedEye(132, 117) + closedEye(168, 117) + BLUSH + NOSE +
+        '<path d="M139 136 Q150 154 161 136Z" fill="#e0567f" stroke="#c2456b" stroke-width="1.5" stroke-linejoin="round"/>' +
+        '<path d="M144 143 Q150 150 156 143" fill="#ff9bb8"/>';
+    },
+    surprised: function () {
+      return '<path d="M124 95 Q132 88 140 93 M160 93 Q168 88 176 95" stroke="#8a5a4a" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+        eye(132, 115, true, -1) + eye(168, 115, true, 1) + BLUSH + NOSE +
+        '<ellipse cx="150" cy="142" rx="4.5" ry="5.5" fill="#e0567f" stroke="#c2456b" stroke-width="1.5"/>';
+    }
+  };
+
+  // =====================================================================
+  //  드레스
+  // =====================================================================
+  function bodice(c, d) {
+    return '<path d="M125 176 Q150 186 175 176 L169 256 Q150 262 131 256Z" fill="' + c + '" stroke="' + d + '" stroke-width="2" stroke-linejoin="round"/>';
+  }
+  var DRESS = {
+    ballgown: {
+      front: function (c, g) {
+        var d = shade(c, -0.22), l = shade(c, 0.45);
+        return '<defs><linearGradient id="' + g + 'sk" x1="0" y1="0" x2="1" y2="0">' +
+          '<stop offset="0" stop-color="' + shade(c, -0.1) + '"/><stop offset=".5" stop-color="' + l + '"/>' +
+          '<stop offset="1" stop-color="' + shade(c, -0.1) + '"/></linearGradient></defs>' +
+          '<path d="M132 250 Q92 320 50 450 Q150 478 250 450 Q208 320 168 250Z" fill="url(#' + g + 'sk)" stroke="' + d + '" stroke-width="2"/>' +
+          '<path d="M118 290 Q100 380 90 458 M150 262 L150 470 M182 290 Q200 380 210 458" stroke="' + d + '" stroke-width="1.5" fill="none" opacity=".45"/>' +
+          '<path d="M50 450 Q150 478 250 450 Q256 462 246 470 Q150 496 54 470 Q44 462 50 450Z" fill="' + l + '" stroke="' + d + '" stroke-width="2"/>' +
+          '<g fill="#fff" opacity=".85">' +
+          '<path d="' + starPath(110, 380, 5, 2) + '"/><path d="' + starPath(186, 350, 4, 1.6) + '"/>' +
+          '<path d="' + starPath(160, 420, 5, 2) + '"/><path d="' + starPath(128, 330, 3.5, 1.4) + '"/></g>' +
+          bodice(c, d) +
+          '<path d="M125 176 Q138 192 150 183 Q162 192 175 176" fill="none" stroke="' + l + '" stroke-width="3"/>' +
+          '<ellipse cx="123" cy="186" rx="13" ry="11" fill="' + l + '" stroke="' + d + '" stroke-width="2"/>' +
+          '<ellipse cx="177" cy="186" rx="13" ry="11" fill="' + l + '" stroke="' + d + '" stroke-width="2"/>' +
+          '<rect x="130" y="247" width="40" height="9" rx="4" fill="' + l + '" stroke="' + d + '" stroke-width="1.5"/>' +
+          '<path d="M150 251 L135 241 L135 261Z M150 251 L165 241 L165 261Z" fill="' + l + '" stroke="' + d + '" stroke-width="1.5"/>' +
+          '<circle cx="150" cy="251" r="4" fill="' + d + '"/>';
+      }
+    },
+    mini: {
+      front: function (c) {
+        var d = shade(c, -0.22), l = shade(c, 0.5), lace = '';
+        for (var x = 104; x <= 196; x += 11.5) lace += '<circle cx="' + x.toFixed(1) + '" cy="372" r="5.5"/>';
+        return '<g fill="' + l + '" stroke="' + d + '" stroke-width="1">' + lace + '</g>' +
+          '<path d="M132 250 L98 368 Q150 384 202 368 L168 250Z" fill="' + c + '" stroke="' + d + '" stroke-width="2" stroke-linejoin="round"/>' +
+          '<path d="M141 256 L122 374 M150 256 L150 378 M159 256 L178 374" stroke="' + d + '" stroke-width="1.5" opacity=".4"/>' +
+          '<path d="M131 178 L137 164 M169 178 L163 164" stroke="' + c + '" stroke-width="4" stroke-linecap="round"/>' +
+          bodice(c, d) +
+          '<rect x="130" y="244" width="40" height="9" fill="' + d + '"/>' +
+          '<circle cx="150" cy="248.5" r="4" fill="#ffe066" stroke="#d9a21b"/>' +
+          '<g fill="' + l + '">' + flower(150, 206, l, 3) + '</g>';
+      }
+    },
+    mermaid: {
+      front: function (c, g) {
+        var d = shade(c, -0.25), l = shade(c, 0.5), dots = '';
+        var pts = [[140, 200], [158, 212], [145, 232], [160, 250], [140, 272], [157, 292], [146, 318], [160, 340],
+          [142, 360], [154, 385], [120, 446], [150, 430], [180, 446], [135, 462], [165, 464]];
+        pts.forEach(function (p) { dots += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="2.2"/>'; });
+        return '<defs><linearGradient id="' + g + 'mm" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0" stop-color="' + c + '"/><stop offset=".75" stop-color="' + shade(c, -0.12) + '"/>' +
+          '<stop offset="1" stop-color="' + l + '"/></linearGradient></defs>' +
+          '<path d="M127 176 Q150 188 173 176 L168 255 Q176 330 164 400 Q200 440 216 474 Q150 490 84 474 Q100 440 136 400 Q124 330 132 255Z" ' +
+          'fill="url(#' + g + 'mm)" stroke="' + d + '" stroke-width="2" stroke-linejoin="round"/>' +
+          '<path d="M136 400 Q150 410 164 400 M112 440 Q130 450 136 474 M188 440 Q170 450 164 474 M150 412 L150 480" stroke="' + d + '" stroke-width="1.5" fill="none" opacity=".45"/>' +
+          '<g fill="#fff" opacity=".7">' + dots + '</g>';
+      }
+    },
+    hanbok: {
+      front: function (c) {
+        var d = shade(c, -0.25), jeo = shade(c, 0.8), jd = shade(c, 0.3), go = shade(c, -0.4);
+        return '<path d="M118 205 Q72 330 58 468 Q150 490 242 468 Q228 330 182 205Z" fill="' + c + '" stroke="' + d + '" stroke-width="2" stroke-linejoin="round"/>' +
+          '<path d="M130 230 Q108 340 100 474 M150 216 L150 482 M170 230 Q192 340 200 474" stroke="' + d + '" stroke-width="1.5" fill="none" opacity=".4"/>' +
+          '<path d="M60 452 Q150 474 240 452" stroke="#ffe066" stroke-width="4" fill="none" opacity=".8"/>' +
+          '<path d="M127 180 Q104 232 94 292 L111 297 Q120 246 136 194Z" fill="' + jeo + '" stroke="' + jd + '" stroke-width="2" stroke-linejoin="round"/>' +
+          '<path d="M173 180 Q196 232 206 292 L189 297 Q180 246 164 194Z" fill="' + jeo + '" stroke="' + jd + '" stroke-width="2" stroke-linejoin="round"/>' +
+          '<path d="M95 285 L112 290 M96 278 L113 283" stroke="#ff6b6b" stroke-width="3"/>' +
+          '<path d="M205 285 L188 290 M204 278 L187 283" stroke="#5aaeff" stroke-width="3"/>' +
+          '<path d="M123 174 Q150 182 177 174 L183 212 Q150 220 117 212Z" fill="' + jeo + '" stroke="' + jd + '" stroke-width="2" stroke-linejoin="round"/>' +
+          '<path d="M136 176 L152 206 M164 176 L148 202" stroke="' + go + '" stroke-width="3.5" fill="none" stroke-linecap="round"/>' +
+          '<path d="M140 178 L150 196 L160 178" stroke="#fff" stroke-width="2" fill="none"/>' +
+          '<path d="M150 205 Q140 226 136 252 L144 253 Q147 230 153 207Z" fill="' + go + '"/>' +
+          '<path d="M152 205 Q157 228 160 248 L167 246 Q162 222 155 205Z" fill="' + go + '"/>' +
+          '<circle cx="151" cy="205" r="4.5" fill="' + go + '"/>';
+      }
+    },
+    fairy: {
+      back: function (c) {
+        var l = shade(c, 0.55);
+        return '<g opacity=".75" stroke="' + shade(c, 0.1) + '" stroke-width="2" fill="' + l + '">' +
+          '<path d="M140 200 Q76 120 62 186 Q60 238 140 226Z"/><path d="M160 200 Q224 120 238 186 Q240 238 160 226Z"/>' +
+          '<path d="M140 226 Q88 250 96 294 Q122 300 146 240Z"/><path d="M160 226 Q212 250 204 294 Q178 300 154 240Z"/></g>' +
+          '<g fill="#fff" opacity=".9"><circle cx="92" cy="180" r="3"/><circle cx="208" cy="180" r="3"/>' +
+          '<circle cx="110" cy="270" r="2"/><circle cx="190" cy="270" r="2"/></g>';
+      },
+      front: function (c) {
+        var d = shade(c, -0.2), l = shade(c, 0.5);
+        return '<path d="M132 248 L84 330 L100 322 L104 346 L120 330 L128 354 L142 336 L150 358 L158 336 L172 354 L180 330 L196 346 L200 322 L216 330 L168 248Z" fill="' + c + '" stroke="' + d + '" stroke-width="2" stroke-linejoin="round" opacity=".95"/>' +
+          '<path d="M134 248 L102 312 L116 308 L120 326 L134 314 L142 332 L150 316 L158 332 L166 314 L180 326 L184 308 L198 312 L166 248Z" fill="' + l + '" stroke="' + d + '" stroke-width="1.5" stroke-linejoin="round"/>' +
+          bodice(c, d) +
+          '<path d="M125 176 L132 190 L140 180 L150 192 L160 180 L168 190 L175 176" fill="' + l + '" stroke="' + d + '" stroke-width="1.5" stroke-linejoin="round"/>' +
+          '<g fill="#fff">' +
+          '<path d="' + starPath(118, 318, 4, 1.6) + '"/><path d="' + starPath(150, 300, 4.5, 1.8) + '"/>' +
+          '<path d="' + starPath(182, 318, 4, 1.6) + '"/><path d="' + starPath(150, 225, 5, 2) + '"/></g>';
+      }
+    }
+  };
+
+  // =====================================================================
+  //  신발
+  // =====================================================================
+  function feet(skin) {
+    var d = shade(skin, -0.18);
+    return '<g fill="' + skin + '" stroke="' + d + '" stroke-width="1.5">' +
+      '<ellipse cx="138" cy="480" rx="8" ry="5"/><ellipse cx="162" cy="480" rx="8" ry="5"/></g>';
+  }
+  var SHOES = {
+    heels: function (c) {
+      var d = shade(c, -0.3), l = shade(c, 0.5);
+      return '<g fill="' + c + '" stroke="' + d + '" stroke-width="1.5">' +
+        '<rect x="127" y="478" width="4" height="12"/><rect x="169" y="478" width="4" height="12"/>' +
+        '<ellipse cx="138" cy="480" rx="11" ry="6.5"/><ellipse cx="162" cy="480" rx="11" ry="6.5"/></g>' +
+        '<path d="M133 477 Q139 474 145 477 M155 477 Q161 474 167 477" stroke="' + l + '" stroke-width="2" fill="none"/>';
+    },
+    boots: function (c) {
+      var d = shade(c, -0.3), l = shade(c, 0.35);
+      return '<g fill="' + c + '" stroke="' + d + '" stroke-width="1.5">' +
+        '<rect x="131" y="434" width="15" height="46" rx="4"/><rect x="154" y="434" width="15" height="46" rx="4"/>' +
+        '<ellipse cx="137" cy="481" rx="11" ry="6.5"/><ellipse cx="163" cy="481" rx="11" ry="6.5"/></g>' +
+        '<g fill="' + l + '" stroke="' + d + '" stroke-width="1"><rect x="129" y="430" width="19" height="7" rx="3"/><rect x="152" y="430" width="19" height="7" rx="3"/></g>';
+    },
+    ribbon: function (c) {
+      var d = shade(c, -0.3), l = shade(c, 0.4);
+      return '<g fill="' + c + '" stroke="' + d + '" stroke-width="1.5">' +
+        '<ellipse cx="138" cy="481" rx="11" ry="6"/><ellipse cx="162" cy="481" rx="11" ry="6"/></g>' +
+        '<g fill="' + l + '" stroke="' + d + '" stroke-width="1">' +
+        '<path d="M138 476 L130 471 L130 481Z M138 476 L146 471 L146 481Z"/><circle cx="138" cy="476" r="2.5"/>' +
+        '<path d="M162 476 L154 471 L154 481Z M162 476 L170 471 L170 481Z"/><circle cx="162" cy="476" r="2.5"/></g>';
+    },
+    glass: function () {
+      return '<g fill="rgba(200,240,255,.75)" stroke="#7cc9f5" stroke-width="1.5">' +
+        '<rect x="127" y="478" width="4" height="12"/><rect x="169" y="478" width="4" height="12"/>' +
+        '<ellipse cx="138" cy="480" rx="11" ry="6.5"/><ellipse cx="162" cy="480" rx="11" ry="6.5"/></g>' +
+        '<g fill="#fff"><path d="' + starPath(144, 476, 4, 1.5) + '"/><path d="' + starPath(168, 476, 4, 1.5) + '"/></g>';
+    },
+    none: function () { return ''; }
+  };
+
+  // =====================================================================
+  //  목걸이, 머리장식, 소품
+  // =====================================================================
+  var NECK = {
+    pearl: function () {
+      var out = '';
+      for (var t = 0; t <= 8; t++) {
+        out += '<circle cx="' + (136 + t * 3.5).toFixed(1) + '" cy="' + (178 + Math.sin(Math.PI * t / 8) * 12).toFixed(1) +
+          '" r="2.7" fill="#fff" stroke="#d9cfe0" stroke-width="1"/>';
+      }
+      return out;
+    },
+    heart: function () {
+      return '<path d="M136 178 Q150 198 164 178" stroke="#e6b422" stroke-width="1.3" fill="none"/>' +
+        '<path d="M150 203 C139 195 141 186 150 190 C159 186 161 195 150 203Z" fill="#ff3d7f" stroke="#c21f5b" stroke-width="1.2"/>' +
+        '<circle cx="146.5" cy="192.5" r="1.4" fill="#fff"/>';
+    },
+    choker: function () {
+      return '<rect x="140.5" y="164" width="19" height="6" rx="2" fill="#5b2a6e"/>' +
+        '<path d="M150 170 L145 176 L150 182 L155 176Z" fill="#ff6fae" stroke="#c21f5b" stroke-width="1"/>';
+    },
+    none: function () { return ''; }
+  };
+
+  var GOLD = '#ffd447', GOLD_D = '#d9a21b';
+  var CROWN = {
+    tiara: function () {
+      return '<path d="M110 80 Q150 66 190 80 L184 70 L174 66 L170 56 L160 64 L150 44 L140 64 L130 56 L126 66 L116 70Z" fill="' + GOLD + '" stroke="' + GOLD_D + '" stroke-width="1.5" stroke-linejoin="round"/>' +
+        '<circle cx="150" cy="62" r="4.5" fill="#ff5fa2" stroke="#fff" stroke-width="1"/>' +
+        '<circle cx="131" cy="68" r="2.8" fill="#7ecbff"/><circle cx="169" cy="68" r="2.8" fill="#7ecbff"/>' +
+        '<circle cx="150" cy="44" r="2.5" fill="#fff"/>';
+    },
+    crown: function () {
+      return '<path d="M116 70 L112 28 L132 48 L150 18 L168 48 L188 28 L184 70 Q150 60 116 70Z" fill="' + GOLD + '" stroke="' + GOLD_D + '" stroke-width="2" stroke-linejoin="round"/>' +
+        '<path d="M115 70 Q150 60 185 70 L186 79 Q150 69 114 79Z" fill="#f6c02c" stroke="' + GOLD_D + '" stroke-width="1.5"/>' +
+        '<g fill="#fff" stroke="' + GOLD_D + '"><circle cx="112" cy="27" r="4"/><circle cx="150" cy="17" r="4.5"/><circle cx="188" cy="27" r="4"/></g>' +
+        '<path d="M150 38 L143 48 L150 58 L157 48Z" fill="#ff4f7f" stroke="#fff" stroke-width="1"/>' +
+        '<circle cx="128" cy="58" r="4" fill="#5aaeff" stroke="#fff"/><circle cx="172" cy="58" r="4" fill="#5aaeff" stroke="#fff"/>' +
+        '<g fill="#b07cff"><circle cx="132" cy="73" r="2.5"/><circle cx="150" cy="70" r="2.5"/><circle cx="168" cy="73" r="2.5"/></g>';
+    },
+    bow: function () {
+      return '<g fill="#ff6fae" stroke="#d6437f" stroke-width="1.5" stroke-linejoin="round">' +
+        '<path d="M184 74 L190 102 L196 98Z"/><path d="M184 74 L178 104 L173 98Z"/>' +
+        '<path d="M184 74 L162 58 Q158 74 164 90Z"/><path d="M184 74 L206 58 Q210 74 204 90Z"/></g>' +
+        '<circle cx="184" cy="74" r="6.5" fill="#ff9cc9" stroke="#d6437f" stroke-width="1.5"/>';
+    },
+    flower: function () {
+      var cols = ['#ff8fc7', '#fff27a', '#b5a1ff', '#ffffff', '#ff8fc7', '#fff27a', '#b5a1ff'];
+      var out = '', leaves = '';
+      for (var i = 0; i < 7; i++) {
+        var a = Math.PI * (1.15 + i * 0.7 / 6);
+        var x = 150 + Math.cos(a) * 50, y = 112 + Math.sin(a) * 50;
+        leaves += '<ellipse cx="' + (x + 5).toFixed(1) + '" cy="' + (y + 3).toFixed(1) + '" rx="6" ry="3" fill="#6cc46f"/>';
+        out += flower(+x.toFixed(1), +y.toFixed(1), cols[i], 4.5);
+      }
+      return leaves + out;
+    },
+    none: function () { return ''; }
+  };
+
+  var ITEM = {
+    wand: function () {
+      return '<line x1="200" y1="302" x2="228" y2="238" stroke="#b98cff" stroke-width="5" stroke-linecap="round"/>' +
+        '<path d="' + starPath(231, 228, 15, 6.5) + '" fill="#ffe066" stroke="#f2b400" stroke-width="1.5" stroke-linejoin="round"/>' +
+        '<g fill="#ffe066"><path d="' + starPath(256, 212, 5, 2) + '"/><path d="' + starPath(214, 204, 4, 1.6) + '"/><path d="' + starPath(252, 246, 3.5, 1.4) + '"/></g>';
+    },
+    fan: function () {
+      var ribs = '';
+      for (var i = 0; i <= 6; i++) {
+        var a = (-120 + i * 80 / 6) * Math.PI / 180;
+        ribs += 'M200 302 L' + (200 + 55 * Math.cos(a)).toFixed(1) + ' ' + (302 + 55 * Math.sin(a)).toFixed(1) + ' ';
+      }
+      return '<path d="M200 302 L172.5 254.4 A55 55 0 0 1 242.1 266.6 Z" fill="#ffe1ef" stroke="#e05a93" stroke-width="2" stroke-linejoin="round"/>' +
+        '<path d="' + ribs + '" stroke="#f0a6c8" stroke-width="1.2"/>' +
+        flower(200, 262, '#ff8fc7', 4) + flower(222, 270, '#b5a1ff', 3);
+    },
+    bouquet: function () {
+      return '<g fill="#6cc46f"><ellipse cx="186" cy="262" rx="9" ry="4" transform="rotate(-30 186 262)"/><ellipse cx="224" cy="262" rx="9" ry="4" transform="rotate(30 224 262)"/></g>' +
+        flower(192, 256, '#ff8fc7', 5) + flower(208, 247, '#ffffff', 5) + flower(220, 258, '#ff6b6b', 5) +
+        flower(202, 266, '#b5a1ff', 4.5) + flower(214, 270, '#fff27a', 4) +
+        '<path d="M198 308 L184 268 L226 266Z" fill="#fff0c2" stroke="#e6c46a" stroke-width="1.5" stroke-linejoin="round"/>' +
+        '<path d="M196 290 L210 290" stroke="#ff6fae" stroke-width="4" stroke-linecap="round"/>';
+    },
+    parasol: function () {
+      return '<line x1="200" y1="302" x2="238" y2="118" stroke="#a0668a" stroke-width="3"/>' +
+        '<path d="M200 302 Q197 314 190 311" stroke="#a0668a" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+        '<path d="M190 168 Q238 98 286 168 Q274 160 262 168 Q250 160 238 168 Q226 160 214 168 Q202 160 190 168Z" fill="#ffc2dd" stroke="#e06a9f" stroke-width="2" stroke-linejoin="round"/>' +
+        '<path d="M238 122 Q226 140 214 168 M238 122 Q250 140 262 168" stroke="#e06a9f" stroke-width="1.5" fill="none"/>' +
+        '<circle cx="238" cy="118" r="3" fill="#e06a9f"/>';
+    },
+    none: function () { return ''; }
+  };
+
+  // =====================================================================
+  //  공주님 그리기
+  // =====================================================================
+  function render(s, g) {
+    var dress = DRESS[s.dress];
+    var out = BG[s.bg](g) +
+      '<ellipse cx="150" cy="488" rx="75" ry="9" fill="rgba(0,0,0,.15)"/>' +
+      (dress.back ? dress.back(s.dressColor, g) : '') +
+      HAIR[s.hair].back(s.hairColor) +
+      body(s.skin) +
+      (s.shoes === 'none' ? feet(s.skin) : SHOES[s.shoes](s.shoeColor)) +
+      dress.front(s.dressColor, g) +
+      NECK[s.necklace]() +
+      head(s.skin) +
+      FACE[s.face]() +
+      HAIR[s.hair].front(s.hairColor) +
+      CROWN[s.crown](g) +
+      ITEM[s.item]() +
+      hands(s.skin);
+    var name = (s.name || '').trim();
+    if (name) {
+      out += '<rect x="60" y="494" width="180" height="22" rx="11" fill="#fff" stroke="#ff6fae" stroke-width="2" opacity=".95"/>' +
+        '<text x="150" y="510" text-anchor="middle" font-size="14" fill="#d6437f" font-family="Jua, sans-serif">' +
+        escapeXml(name) + ' 공주님</text>';
+    }
+    return out;
+  }
+
+  // =====================================================================
+  //  옷장 설정
+  // =====================================================================
+  var CATS = [
+    { key: 'dress', label: '드레스', emo: '👗', colorKey: 'dressColor',
+      colors: ['#ff8fc7', '#c58bff', '#7ec8ff', '#ffe27a', '#8fe3b0', '#ff6b6b', '#f4efff', '#3d4a9e'],
+      items: [['ballgown', '볼가운', '👗'], ['mini', '미니드레스', '💃'], ['mermaid', '인어드레스', '🧜‍♀️'],
+              ['hanbok', '한복', '🎎'], ['fairy', '요정드레스', '🧚‍♀️']] },
+    { key: 'hair', label: '머리', emo: '💇‍♀️', colorKey: 'hairColor',
+      colors: ['#f5d36b', '#8b5a3c', '#2b2233', '#e86fa8', '#9c7be0', '#7fc8f0', '#eeeef5', '#e8743b'],
+      items: [['long', '긴 생머리', '💁‍♀️'], ['wavy', '웨이브', '🌊'], ['twin', '양갈래', '🎀'],
+              ['bun', '올림머리', '🍡'], ['bob', '단발', '✂️'], ['pony', '포니테일', '🐴']] },
+    { key: 'shoes', label: '신발', emo: '👠', colorKey: 'shoeColor',
+      colors: ['#ff5fa2', '#b07cff', '#5aaeff', '#ffd24a', '#ffffff', '#3a2a3a', '#e8453c'],
+      items: [['heels', '구두', '👠'], ['boots', '부츠', '👢'], ['ribbon', '리본슈즈', '🥿'],
+              ['glass', '유리구두', '💎'], ['none', '맨발', '🦶']] },
+    { key: 'crown', label: '머리장식', emo: '👑',
+      items: [['tiara', '티아라', '👸'], ['crown', '왕관', '👑'], ['bow', '리본', '🎀'],
+              ['flower', '꽃관', '🌸'], ['none', '없음', '❌']] },
+    { key: 'necklace', label: '목걸이', emo: '💎',
+      items: [['pearl', '진주', '⚪'], ['heart', '하트', '💖'], ['choker', '초커', '🎗️'], ['none', '없음', '❌']] },
+    { key: 'item', label: '소품', emo: '🪄',
+      items: [['wand', '요술봉', '🪄'], ['fan', '부채', '🪭'], ['bouquet', '꽃다발', '💐'],
+              ['parasol', '양산', '⛱️'], ['none', '없음', '❌']] },
+    { key: 'face', label: '표정', emo: '😊',
+      items: [['smile', '방긋', '😊'], ['wink', '윙크', '😉'], ['happy', '신나요', '😆'], ['surprised', '깜짝', '😮']] },
+    { key: 'skin', label: '피부', emo: '🎨', colorKey: 'skin',
+      colors: ['#ffe3d3', '#f8d0b0', '#e9b48a', '#c98d62', '#8d5a3b'], items: [] },
+    { key: 'bg', label: '배경', emo: '🏰',
+      items: [['castle', '성', '🏰'], ['garden', '정원', '🌷'], ['night', '밤하늘', '🌙'], ['ballroom', '무도회장', '✨']] }
+  ];
+
+  var DEFAULT = {
+    bg: 'castle', skin: '#ffe3d3', hair: 'long', hairColor: '#f5d36b', face: 'smile',
+    dress: 'ballgown', dressColor: '#ff8fc7', shoes: 'heels', shoeColor: '#ff5fa2',
+    crown: 'tiara', necklace: 'pearl', item: 'wand', name: ''
+  };
+
+  // 불러온 값이 올바른지 확인 (잘못된 값은 기본값으로)
+  function sanitize(o) {
+    var s = Object.assign({}, DEFAULT);
+    if (!o || typeof o !== 'object') return s;
+    CATS.forEach(function (cat) {
+      if (cat.items.length && cat.items.some(function (it) { return it[0] === o[cat.key]; })) s[cat.key] = o[cat.key];
+      if (cat.colorKey && /^#[0-9a-fA-F]{6}$/.test(o[cat.colorKey] || '')) s[cat.colorKey] = o[cat.colorKey].toLowerCase();
+    });
+    if (typeof o.name === 'string') s.name = o.name.slice(0, 12);
+    return s;
+  }
+
+  // =====================================================================
+  //  화면
+  // =====================================================================
+  var state = Object.assign({}, DEFAULT);
+  var curCat = 'dress';
+  var $ = function (id) { return document.getElementById(id); };
+
+  function draw(animate) {
+    var svg = $('stage');
+    svg.innerHTML = render(state, 'm');
+    if (animate) {
+      svg.classList.remove('pop');
+      void svg.getBoundingClientRect();
+      svg.classList.add('pop');
+      sparkle();
+    }
+  }
+
+  function sparkle() {
+    var wrap = $('stageWrap');
+    var icons = ['✨', '💖', '⭐', '✨', '🌸'];
+    for (var i = 0; i < 6; i++) {
+      var sp = document.createElement('span');
+      sp.className = 'sparkle';
+      sp.textContent = icons[Math.floor(Math.random() * icons.length)];
+      sp.style.left = (15 + Math.random() * 65) + '%';
+      sp.style.top = (10 + Math.random() * 70) + '%';
+      sp.style.animationDelay = (Math.random() * 0.2) + 's';
+      wrap.appendChild(sp);
+      setTimeout(function (el) { el.remove(); }, 1200, sp);
+    }
+  }
+
+  function renderTabs() {
+    $('tabs').innerHTML = CATS.map(function (c) {
+      return '<button class="tab' + (c.key === curCat ? ' active' : '') + '" data-cat="' + c.key + '">' +
+        '<span class="emo">' + c.emo + '</span>' + c.label + '</button>';
+    }).join('');
+  }
+
+  function renderPanel() {
+    var cat = CATS.filter(function (c) { return c.key === curCat; })[0];
+    $('panelTitle').textContent = cat.emo + ' ' + cat.label + (cat.items.length ? ' 고르기' : ' 색 고르기');
+    $('panelTitle').style.display = cat.items.length ? '' : 'none';
+    $('items').style.display = cat.items.length ? '' : 'none';
+    $('items').innerHTML = cat.items.map(function (it) {
+      return '<button class="item' + (state[cat.key] === it[0] ? ' selected' : '') + '" data-key="' + cat.key + '" data-val="' + it[0] + '">' +
+        '<span class="emo">' + it[2] + '</span>' + it[1] + '</button>';
+    }).join('');
+
+    var showColors = !!cat.colorKey && !(cat.key === 'shoes' && (state.shoes === 'glass' || state.shoes === 'none'));
+    $('colorTitle').style.display = showColors ? '' : 'none';
+    $('colors').style.display = showColors ? '' : 'none';
+    if (showColors) {
+      $('colorTitle').textContent = cat.key === 'skin' ? '🎨 피부색 고르기' : '🎨 ' + cat.label + ' 색깔';
+      $('colors').innerHTML = cat.colors.map(function (col) {
+        return '<button class="swatch' + (state[cat.colorKey] === col ? ' selected' : '') + '" style="background:' + col +
+          '" data-key="' + cat.colorKey + '" data-val="' + col + '" aria-label="' + col + '"></button>';
+      }).join('');
+    }
+  }
+
+  function setValue(key, val) {
+    if (state[key] === val) return;
+    state[key] = val;
+    draw(true);
+    renderPanel();
+  }
+
+  function randomize() {
+    var pick = function (arr) { return arr[Math.floor(Math.random() * arr.length)]; };
+    CATS.forEach(function (c) {
+      if (c.items.length) state[c.key] = pick(c.items)[0];
+      if (c.colorKey) state[c.colorKey] = pick(c.colors);
+    });
+    draw(true);
+    renderPanel();
+    toast('🎲 짜잔! 새로운 옷이에요');
+  }
+
+  var toastTimer;
+  function toast(msg) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 1800);
+  }
+
+  // =====================================================================
+  //  저장 / 불러오기 (구글 앱스 스크립트, 없으면 브라우저에 저장)
+  // =====================================================================
+  var HAS_GAS = typeof google !== 'undefined' && google.script && google.script.run;
+  var LOCAL_KEY = 'princess_outfits';
+  var localApi = {
+    getOutfits: function () {
+      try { return JSON.parse(localStorage.getItem(LOCAL_KEY)) || [null, null, null]; }
+      catch (e) { return [null, null, null]; }
+    },
+    saveOutfit: function (slot, outfit) {
+      var list = localApi.getOutfits();
+      var o = Object.assign({}, outfit, { savedAt: new Date().toISOString() });
+      list[slot - 1] = o;
+      try { localStorage.setItem(LOCAL_KEY, JSON.stringify(list)); } catch (e) { throw new Error('저장할 수 없어요'); }
+      return o;
+    },
+    deleteOutfit: function (slot) {
+      var list = localApi.getOutfits();
+      list[slot - 1] = null;
+      try { localStorage.setItem(LOCAL_KEY, JSON.stringify(list)); } catch (e) { /* 무시 */ }
+      return true;
+    }
+  };
+  function api(fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (resolve, reject) {
+      if (HAS_GAS) {
+        var runner = google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
+        runner[fn].apply(runner, args);
+      } else {
+        try { resolve(localApi[fn].apply(null, args)); } catch (e) { reject(e); }
+      }
+    });
+  }
+
+  var slotData = [null, null, null];
+  function openSaveModal() {
+    $('saveModal').classList.add('open');
+    $('saveHint').textContent = '불러오는 중... ⏳';
+    $('slots').innerHTML = '';
+    api('getOutfits').then(function (list) {
+      slotData = list || [null, null, null];
+      renderSlots();
+      $('saveHint').textContent = HAS_GAS ? '구글 계정에 저장돼요 ☁️' : '이 브라우저에 저장돼요 💻';
+    }).catch(function (e) {
+      $('saveHint').textContent = '앗, 불러오지 못했어요: ' + (e && e.message ? e.message : e);
+    });
+  }
+  function renderSlots() {
+    $('slots').innerHTML = slotData.map(function (o, i) {
+      var n = i + 1;
+      var thumb = o ? '<svg viewBox="0 0 300 520" xmlns="http://www.w3.org/2000/svg">' + render(sanitize(o), 's' + n) + '</svg>' : '👗';
+      var label = o ? (o.name ? escapeXml(o.name) + ' 공주님' : n + '번 서랍') : '비어 있어요';
+      return '<div class="slot"><div class="thumb">' + thumb + '</div>' +
+        '<div class="label">' + label + '</div>' +
+        '<button class="btn" data-save="' + n + '">💾 여기 저장</button>' +
+        (o ? '<button class="btn purple" data-load="' + n + '">📂 불러오기</button>' +
+             '<button class="btn gray" data-del="' + n + '">🗑️ 지우기</button>' : '') +
+        '</div>';
+    }).join('');
+  }
+  function saveTo(n) {
+    if (slotData[n - 1] && !confirm(n + '번 서랍에 있는 옷을 새 옷으로 바꿀까요?')) return;
+    $('saveHint').textContent = '저장하는 중... ⏳';
+    api('saveOutfit', n, state).then(function (saved) {
+      slotData[n - 1] = saved;
+      renderSlots();
+      $('saveHint').textContent = '';
+      toast('💾 ' + n + '번 서랍에 저장했어요!');
+    }).catch(function (e) {
+      $('saveHint').textContent = '앗, 저장하지 못했어요: ' + (e && e.message ? e.message : e);
+    });
+  }
+  function loadFrom(n) {
+    state = sanitize(slotData[n - 1]);
+    $('nameInput').value = state.name;
+    draw(true);
+    renderPanel();
+    $('saveModal').classList.remove('open');
+    toast('📂 ' + n + '번 서랍의 옷을 입었어요!');
+  }
+  function deleteSlot(n) {
+    if (!confirm(n + '번 서랍을 비울까요?')) return;
+    api('deleteOutfit', n).then(function () {
+      slotData[n - 1] = null;
+      renderSlots();
+    });
+  }
+
+  // =====================================================================
+  //  사진 찍기 (PNG)
+  // =====================================================================
+  function takePhoto() {
+    var W = 600, H = 1040;
+    var svgStr = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 520" width="' + W + '" height="' + H + '">' +
+      render(state, 'p') + '</svg>';
+    var img = new Image();
+    img.onload = function () {
+      var canvas = document.createElement('canvas');
+      canvas.width = W; canvas.height = H;
+      canvas.getContext('2d').drawImage(img, 0, 0, W, H);
+      var url;
+      try { url = canvas.toDataURL('image/png'); } catch (e) { url = img.src; }
+      $('photoImg').src = url;
+      $('photoDownload').href = url;
+      $('photoDownload').download = ((state.name || '').trim() || 'princess') + '.png';
+      $('photoModal').classList.add('open');
+    };
+    img.onerror = function () { toast('앗, 사진을 만들지 못했어요'); };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+  }
+
+  // =====================================================================
+  //  이벤트 연결
+  // =====================================================================
+  $('tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-cat]');
+    if (!b) return;
+    curCat = b.dataset.cat;
+    renderTabs();
+    renderPanel();
+  });
+  $('items').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-key]');
+    if (b) setValue(b.dataset.key, b.dataset.val);
+  });
+  $('colors').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-key]');
+    if (b) setValue(b.dataset.key, b.dataset.val);
+  });
+  $('nameInput').addEventListener('input', function (e) {
+    state.name = e.target.value.slice(0, 12);
+    draw(false);
+  });
+  $('randomBtn').addEventListener('click', randomize);
+  $('resetBtn').addEventListener('click', function () {
+    var name = state.name;
+    state = Object.assign({}, DEFAULT, { name: name });
+    draw(true);
+    renderPanel();
+    toast('🔄 처음 옷으로 돌아왔어요');
+  });
+  $('photoBtn').addEventListener('click', takePhoto);
+  $('saveBtn').addEventListener('click', openSaveModal);
+  $('slots').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.save) saveTo(+b.dataset.save);
+    if (b.dataset.load) loadFrom(+b.dataset.load);
+    if (b.dataset.del) deleteSlot(+b.dataset.del);
+  });
+  document.querySelectorAll('.modal').forEach(function (m) {
+    m.addEventListener('click', function (e) {
+      if (e.target === m || e.target.hasAttribute('data-close')) m.classList.remove('open');
+    });
+  });
+
+  renderTabs();
+  renderPanel();
+  draw(false);
+  </script>
+</body>
+</html>
