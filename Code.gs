@@ -50,7 +50,7 @@ function getOutfits() {
 /**
  * 옷차림을 서랍에 저장합니다.
  * @param {number} slot 1 ~ 3
- * @param {Object} outfit { art, hair, hairColor, skin, worn: { top: 'top_heart', ... } }
+ * @param {Object} outfit { art, princess, hair, hairColor, skin, worn: { top: 'top_heart', ... } }
  */
 function saveOutfit(slot, outfit) {
   slot = checkSlot_(slot);
@@ -84,6 +84,7 @@ function sanitizeOutfit_(outfit) {
   var hex = /^#[0-9a-fA-F]{6}$/;
   var clean = { worn: {} };
   if (outfit.art === 'ai' || outfit.art === 'draw') clean.art = outfit.art;
+  if (/^[a-z]{1,12}$/.test(String(outfit.princess || ''))) clean.princess = String(outfit.princess);
   if (/^[a-z]{1,20}$/.test(String(outfit.hair || ''))) clean.hair = String(outfit.hair);
   if (hex.test(String(outfit.hairColor || ''))) clean.hairColor = String(outfit.hairColor);
   if (hex.test(String(outfit.skin || ''))) clean.skin = String(outfit.skin);

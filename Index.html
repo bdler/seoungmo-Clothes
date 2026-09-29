@@ -1318,21 +1318,26 @@
     return (it.back ? it.back(p + 'k') : '') + it.draw(p);
   }
   // =====================================================================
-  //  AI 그림 공주님 (GitHub 저장소 assets/princess 폴더의 PNG 5장)
-  //  - 머리 모양마다 한 장: wavy / straight / twin / bun / bob .png
-  //  - 파란 눈동자를 찾아서 공주님 몸의 눈 위치(156,150)/(204,150)에 자동으로 맞춰요
+  //  AI 그림 공주님 (GitHub 저장소 assets/princess/body 폴더의 전신 그림)
+  //  - 공주님마다 한 장: rose / sunny / luna / coco / amber / peach (.png, 없으면 .jpg)
+  //  - 모두 같은 분홍 튜브탑·반바지를 입고 있어서, 그 분홍색을 찾아
+  //    옷이 맞춰진 몸(튜브탑 위 284, 반바지 위 430, 발끝 880)에 자동으로 맞춰요
   //  - 파일을 못 찾으면 직접 그린 공주님으로 그대로 놀 수 있어요
   // =====================================================================
+  var AI_PRINCESSES = [
+    { id: 'rose', name: '로즈' }, { id: 'sunny', name: '써니' }, { id: 'luna', name: '루나' },
+    { id: 'coco', name: '코코' }, { id: 'amber', name: '앰버' }, { id: 'peach', name: '피치' }
+  ];
   var AI_BASES = [
-    'https://cdn.jsdelivr.net/gh/bdler/seoungmo-Clothes@main/assets/princess/',
-    'https://raw.githubusercontent.com/bdler/seoungmo-Clothes/main/assets/princess/',
-    'https://raw.githubusercontent.com/bdler/seoungmo-Clothes/claude/sweet-faraday-7oa3ur/assets/princess/'
+    'https://cdn.jsdelivr.net/gh/bdler/seoungmo-Clothes@main/assets/princess/body/',
+    'https://raw.githubusercontent.com/bdler/seoungmo-Clothes/main/assets/princess/body/',
+    'https://raw.githubusercontent.com/bdler/seoungmo-Clothes/claude/sweet-faraday-7oa3ur/assets/princess/body/'
   ];
   (function () { // 시험용: 주소 뒤에 ?assets=폴더주소 를 붙이면 그 폴더를 먼저 봐요
     var m = /[?&]assets=([^&]+)/.exec(location.search);
     if (m) AI_BASES.unshift(decodeURIComponent(m[1]));
   })();
-  var AI = { status: 'loading', heads: {} };
+  var AI = { status: 'loading', bodies: {}, list: [] };
 
   function loadImg(url) {
     return fetch(url, { mode: 'cors' }).then(function (r) {
@@ -1347,17 +1352,21 @@
       });
     });
   }
-  // 흰 배경 지우기(가장자리에서 이어진 흰색만) + 눈 위치 찾기 + 목 피부색 뽑기
-  function prepareHead(img) {
-    var scale = Math.min(1, 720 / img.naturalWidth);
+  // 흰 배경 지우기 + 분홍 속옷 위치로 몸에 맞출 값 계산
+  function prepareBody(img) {
+    var scale = Math.min(1, 1400 / img.naturalHeight);
     var W = Math.round(img.naturalWidth * scale), H = Math.round(img.naturalHeight * scale);
     var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     var g = cv.getContext('2d'); g.drawImage(img, 0, 0, W, H);
-    var im = g.getImageData(0, 0, W, H), d = im.data;
-    var bg = function (i) { return d[i + 3] < 20 || (d[i] > 236 && d[i + 1] > 236 && d[i + 2] > 236); };
+    var im = g.getImageData(0, 0, W, H), d = im.data, x, y, i;
+    // 흰색에 가깝고 색이 거의 없는 곳 = 배경 (jpg 얼룩까지)
+    var bg = function (k) {
+      var mn = Math.min(d[k], d[k + 1], d[k + 2]), mx = Math.max(d[k], d[k + 1], d[k + 2]);
+      return d[k + 3] < 20 || (mn > 222 && mx - mn < 22);
+    };
     var seen = new Uint8Array(W * H), stack = [];
-    for (var x = 0; x < W; x++) { stack.push(x, (H - 1) * W + x); }
-    for (var y = 0; y < H; y++) { stack.push(y * W, y * W + W - 1); }
+    for (x = 0; x < W; x++) stack.push(x, (H - 1) * W + x);
+    for (y = 0; y < H; y++) stack.push(y * W, y * W + W - 1);
     while (stack.length) {
       var k = stack.pop();
       if (seen[k]) continue;
@@ -1368,58 +1377,103 @@
       if (px > 0) stack.push(k - 1); if (px < W - 1) stack.push(k + 1);
       if (py > 0) stack.push(k - W); if (py < H - 1) stack.push(k + W);
     }
-    g.putImageData(im, 0, 0);
-    // 파란 눈동자 두 무더기의 가운데
-    var ex = [0, 0], ey = [0, 0], en = [0, 0];
-    for (y = 0; y < H * 0.7; y++) for (x = 0; x < W; x++) {
-      var i = (y * W + x) * 4;
-      if (d[i + 3] > 128 && d[i + 2] > d[i] + 40 && d[i + 2] > d[i + 1] + 10) {
-        var s2 = x < W / 2 ? 0 : 1; ex[s2] += x; ey[s2] += y; en[s2]++;
+    // 팔과 몸 사이, 두 다리 사이처럼 몸에 갇힌 흰 배경도 지워요 (얼굴 아래쪽의 넓은 곳만 — 눈 흰자는 그대로)
+    var minArea = W * H * 0.00012;
+    for (y = Math.round(H * 0.22); y < H; y++) for (x = 0; x < W; x++) {
+      var s0 = y * W + x;
+      if (seen[s0] || !bg(s0 * 4)) continue;
+      var comp = [], st2 = [s0];
+      seen[s0] = 1;
+      while (st2.length) {
+        var c = st2.pop(); comp.push(c);
+        var cx0 = c % W, cy0 = (c / W) | 0;
+        [cx0 > 0 ? c - 1 : -1, cx0 < W - 1 ? c + 1 : -1, cy0 > 0 ? c - W : -1, cy0 < H - 1 ? c + W : -1].forEach(function (nb) {
+          if (nb >= 0 && !seen[nb] && bg(nb * 4)) { seen[nb] = 1; st2.push(nb); }
+        });
       }
+      if (comp.length >= minArea) comp.forEach(function (c) { d[c * 4 + 3] = 0; });
     }
-    var e1x, e2x, eyY;
-    if (en[0] > 5 && en[1] > 5) { e1x = ex[0] / en[0]; e2x = ex[1] / en[1]; eyY = (ey[0] / en[0] + ey[1] / en[1]) / 2; }
-    else { e1x = W * 0.389; e2x = W * 0.606; eyY = H * 0.446; }
-    var u = 48 / (e2x - e1x); // 공주님 몸 좌표에서 두 눈 사이는 48
-    // 가슴 윗부분(그늘 없는 맨살)에서 피부색을 뽑아 몸 색을 맞춰요
-    var ed = e2x - e1x, sx = Math.round((e1x + e2x) / 2), sy = Math.round(eyY + ed * 2.3), r = 0, gg = 0, b = 0, n = 0, rad = Math.max(2, Math.round(ed * 0.18));
-    var picks = [];
-    for (y = sy - rad; y <= sy + rad; y++) for (x = sx - rad * 3; x <= sx + rad * 3; x++) {
-      if (y < 0 || y >= H || x < 0 || x >= W) continue;
-      var j = (y * W + x) * 4;
-      if (d[j + 3] > 220) picks.push([d[j], d[j + 1], d[j + 2]]);
+    // 윤곽에 남은 하얀 테두리를 두 번 깎아요
+    for (var pass = 0; pass < 2; pass++) {
+      var clear = [];
+      for (y = 1; y < H - 1; y++) for (x = 1; x < W - 1; x++) {
+        i = (y * W + x) * 4;
+        if (d[i + 3] === 0 || Math.min(d[i], d[i + 1], d[i + 2]) < 195) continue;
+        if (d[i - 1] === 0 || d[i + 7] === 0 || d[i - W * 4 + 3] === 0 || d[i + W * 4 + 3] === 0) clear.push(i);
+      }
+      clear.forEach(function (j) { d[j + 3] = 0; });
     }
-    picks.sort(function (a, c) { return (c[0] + c[1] + c[2]) - (a[0] + a[1] + a[2]); });
-    picks.slice(0, Math.max(1, Math.round(picks.length / 2))).forEach(function (c) { r += c[0]; gg += c[1]; b += c[2]; n++; });
-    var hex = function (v) { return ('0' + Math.round(v / n).toString(16)).slice(-2); };
+    g.putImageData(im, 0, 0);
+    // 줄마다 분홍 속옷 픽셀 수 (몸 가운데 부분만)
+    var rows = [], sumX = 0, cntX = 0, feet = 0;
+    for (y = 0; y < H; y++) {
+      var n = 0;
+      for (x = 0; x < W; x++) {
+        i = (y * W + x) * 4;
+        if (d[i + 3] > 128) feet = y;
+        if (y > H * 0.25 && y < H * 0.62 && x > W * 0.3 && x < W * 0.7 && d[i] > 185 && d[i] - d[i + 1] > 45 && d[i + 2] >= d[i + 1] - 8) {
+          n++; sumX += x; cntX++;
+        }
+      }
+      rows.push(n);
+    }
+    var need = Math.max(3, W * 0.08), runs = [], cur = null;
+    rows.forEach(function (n, yy) {
+      if (n >= need) { if (!cur) { cur = [yy, yy]; runs.push(cur); } else cur[1] = yy; }
+      else cur = null;
+    });
+    var fit;
+    if (runs.length >= 2) {
+      var top = runs[0], shorts = runs[runs.length - 1], cx = sumX / cntX;
+      var sy = (430 - 284) / (shorts[0] - top[0]);
+      // 배(튜브탑과 반바지 사이)의 몸 너비로 가로 크기를 맞춰요 (옷 몸통 너비 70)
+      var my = Math.round((top[1] + shorts[0]) / 2), L = Math.round(cx), R = Math.round(cx);
+      var solid = function (xx) { return d[(my * W + xx) * 4 + 3] > 128; };
+      while (L > 0 && solid(L - 1)) L--;
+      while (R < W - 1 && solid(R + 1)) R++;
+      var sx = Math.min(sy * 1.2, Math.max(sy * 0.85, 70 / Math.max(1, R - L + 1)));
+      var cut = shorts[1], y0 = 284 - top[0] * sy, yCut = y0 + cut * sy;
+      var sLeg = (880 - yCut) / Math.max(1, feet - cut);
+      fit = { x: 180 - cx * sx, w: W * sx, y: y0, h: H * sy, yCut: yCut, legY: yCut - cut * sLeg, legH: H * sLeg };
+    } else { // 분홍 속옷을 못 찾으면 발끝과 키로만 맞춰요
+      var s = 850 / Math.max(1, feet);
+      fit = { x: 180 - W * s / 2, w: W * s, y: 30, h: H * s, yCut: 2000, legY: 30, legH: H * s };
+    }
     return new Promise(function (res) {
       cv.toBlob(function (blob) {
-        res({
-          url: URL.createObjectURL(blob), data: cv.toDataURL('image/png'),
-          x: 180 - ((e1x + e2x) / 2) * u, y: 150 - eyY * u, w: W * u, h: H * u,
-          chin: 150 + (e2x - e1x) * 1.05 * u,
-          skin: n ? '#' + hex(r) + hex(gg) + hex(b) : '#f6d2b8'
-        });
+        fit.url = URL.createObjectURL(blob);
+        fit.data = cv.toDataURL('image/png');
+        res(fit);
       }, 'image/png');
     });
   }
   function loadAI() {
-    var tryBase = function (i) {
-      if (i >= AI_BASES.length) return Promise.reject(new Error('AI 그림 파일을 찾지 못했어요'));
-      return loadImg(AI_BASES[i] + 'wavy.png').then(function (first) { return { base: AI_BASES[i], first: first }; },
-        function () { return tryBase(i + 1); });
+    var loadOne = function (p) {
+      var tryAt = function (i, ext) {
+        if (i >= AI_BASES.length) return ext === 'png' ? tryAt(0, 'jpg') : Promise.reject(new Error(p.id));
+        return loadImg(AI_BASES[i] + p.id + '.' + ext).catch(function () { return tryAt(i + 1, ext); });
+      };
+      return tryAt(0, 'png').then(prepareBody).then(function (b) { AI.bodies[p.id] = b; }, function () {});
     };
-    return tryBase(0).then(function (found) {
-      return Promise.all(HAIR_ORDER.map(function (key) {
-        return (key === 'wavy' ? Promise.resolve(found.first) : loadImg(found.base + key + '.png'))
-          .then(prepareHead).then(function (h) { AI.heads[key] = h; });
-      }));
-    }).then(function () { AI.status = 'ready'; }, function (e) { AI.status = 'missing'; console.warn(e); });
+    return Promise.all(AI_PRINCESSES.map(loadOne)).then(function () {
+      AI.list = AI_PRINCESSES.filter(function (p) { return AI.bodies[p.id]; });
+      AI.status = AI.list.length ? 'ready' : 'missing';
+    });
   }
-  function aiHead(st) { return st.art === 'ai' && AI.status === 'ready' ? AI.heads[st.hair] : null; }
-  function aiImage(h, forExport, clip) {
-    return '<image href="' + (forExport ? h.data : h.url) + '" x="' + h.x.toFixed(1) + '" y="' + h.y.toFixed(1) +
-      '" width="' + h.w.toFixed(1) + '" height="' + h.h.toFixed(1) + '" preserveAspectRatio="none"' + (clip ? ' clip-path="url(#' + clip + ')"' : '') + '/>';
+  function aiBody(st) {
+    if (st.art !== 'ai' || AI.status !== 'ready') return null;
+    return AI.bodies[st.princess] || AI.bodies[AI.list[0].id];
+  }
+  // 윗몸과 다리를 따로 늘려서 붙여요 (다리 길이를 옷에 맞추려고)
+  function aiBodyMarkup(b, ctx, forExport) {
+    var href = forExport ? b.data : b.url, yc = b.yCut.toFixed(1);
+    var img = function (y, h, clip) {
+      return '<image href="' + href + '" x="' + b.x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + b.w.toFixed(1) +
+        '" height="' + h.toFixed(1) + '" preserveAspectRatio="none" clip-path="url(#' + ctx + clip + ')"/>';
+    };
+    return '<defs><clipPath id="' + ctx + 'up"><rect x="-200" y="-200" width="760" height="' + (b.yCut + 200.6).toFixed(1) + '"/></clipPath>' +
+      '<clipPath id="' + ctx + 'lo"><rect x="-200" y="' + yc + '" width="760" height="1200"/></clipPath></defs>' +
+      img(b.legY, b.legH, 'lo') + img(b.y, b.h, 'up');
   }
 
   function dollMarkup(st, ctx, interactive, forExport) {
@@ -1427,17 +1481,13 @@
     var wrap = function (slot, html) {
       return interactive ? '<g class="worn" data-item="' + worn[slot] + '">' + html + '</g>' : html;
     };
-    var hair = HAIRS[st.hair], ai = aiHead(st), skin = ai ? shade(ai.skin, 0.07) : st.skin;
-    // AI 그림: 한 장은 몸 뒤에(뒷머리), 한 장은 턱까지만 잘라서 옷 위에(얼굴·앞머리)
-    var out = ai ? '<defs><clipPath id="' + ctx + 'aic"><rect x="0" y="-60" width="360" height="' + (ai.chin + 60).toFixed(1) + '"/>' +
-                   '<rect x="163" y="' + ai.chin.toFixed(1) + '" width="34" height="' + (246 - ai.chin).toFixed(1) + '"/></clipPath></defs>' + aiImage(ai, forExport)
-                 : hairDefs(ctx + 'h', st.hairColor) + hair.back(ctx + 'h', st.hairColor);
+    var hair = HAIRS[st.hair], ai = aiBody(st);
+    var out = ai ? '' : hairDefs(ctx + 'h', st.hairColor) + hair.back(ctx + 'h', st.hairColor);
     SLOTS.forEach(function (slot) {
       var it = worn[slot] && ITEM_BY_ID[worn[slot]];
       if (it && it.back) out += wrap(slot, it.back(ctx + it.id + 'k'));
     });
-    out += bodySVG(ctx + 'b', skin, !!ai);
-    if (ai) out += aiImage(ai, forExport, ctx + 'aic');
+    out += ai ? aiBodyMarkup(ai, ctx + 'ai', forExport) : bodySVG(ctx + 'b', st.skin);
     LAYERS_UNDER.forEach(function (slot) {
       var it = worn[slot] && ITEM_BY_ID[worn[slot]];
       if (it) out += wrap(slot, it.draw(ctx + it.id));
@@ -1447,20 +1497,21 @@
       var it = worn[slot] && ITEM_BY_ID[worn[slot]];
       if (it) out += wrap(slot, it.draw(ctx + it.id));
     });
-    out += handsSVG(ctx + 'b', skin);
+    if (!ai) out += handsSVG(ctx + 'b', st.skin);
     return out;
   }
 
   // =====================================================================
   //  상태
   // =====================================================================
-  var DEFAULT = { art: 'ai', hair: 'wavy', hairColor: '#c8742f', skin: '#ffe6d8', worn: {} };
+  var DEFAULT = { art: 'ai', princess: 'rose', hair: 'wavy', hairColor: '#c8742f', skin: '#ffe6d8', worn: {} };
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   var state = clone(DEFAULT);
   function sanitize(o) {
     var s = clone(DEFAULT);
     if (!o || typeof o !== 'object') return s;
     if (o.art === 'ai' || o.art === 'draw') s.art = o.art;
+    if (AI_PRINCESSES.some(function (p) { return p.id === o.princess; })) s.princess = o.princess;
     if (HAIRS[o.hair]) s.hair = o.hair;
     if (/^#[0-9a-fA-F]{6}$/.test(o.hairColor || '')) s.hairColor = o.hairColor.toLowerCase();
     if (/^#[0-9a-fA-F]{6}$/.test(o.skin || '')) s.skin = o.skin.toLowerCase();
@@ -1563,17 +1614,26 @@
     var html = '<h3>🖌️ 그림체</h3><div class="sw-row">' +
       '<button class="art-btn' + (useAi ? ' active' : '') + '" data-art="ai"' + (aiOk ? '' : ' disabled') + '>🤖 AI 그림</button>' +
       '<button class="art-btn' + (useAi ? '' : ' active') + '" data-art="draw">✏️ 직접 그린 그림</button>' +
-      (aiOk ? '' : '<span class="art-note">' + (AI.status === 'loading' ? 'AI 그림을 불러오는 중이에요…' : 'AI 그림 파일을 찾지 못했어요 (assets/princess 폴더)') + '</span>') +
-      '</div><h3>💇‍♀️ 머리 모양</h3><div class="hair-row">';
+      (aiOk ? '' : '<span class="art-note">' + (AI.status === 'loading' ? 'AI 그림을 불러오는 중이에요…' : 'AI 그림 파일을 찾지 못했어요 (assets/princess/body 폴더)') + '</span>') +
+      '</div>';
+    if (useAi) {
+      // AI 그림: 피부색·머리색이 다른 공주님 중에서 골라요
+      var cur = aiBody(state);
+      html += '<h3>👸 공주님 고르기</h3><div class="hair-row">';
+      AI.list.forEach(function (pr) {
+        var b = AI.bodies[pr.id];
+        html += '<button class="hair-btn' + (b === cur ? ' active' : '') + '" data-princess="' + pr.id + '">' +
+          '<svg viewBox="80 0 200 330">' + aiBodyMarkup(b, 'pp' + pr.id, false) + '</svg>' + pr.name + '</button>';
+      });
+      $('hairPanel').innerHTML = html + '</div><p class="art-note">머리 모양·머리색·피부색을 직접 바꾸고 싶으면 ✏️ 직접 그린 그림을 골라요.</p>';
+      return;
+    }
+    html += '<h3>💇‍♀️ 머리 모양</h3><div class="hair-row">';
     HAIR_ORDER.forEach(function (key) {
-      var prev = { art: state.art, hair: key, hairColor: state.hairColor, skin: state.skin, worn: {} };
+      var prev = { art: 'draw', hair: key, hairColor: state.hairColor, skin: state.skin, worn: {} };
       html += '<button class="hair-btn' + (state.hair === key ? ' active' : '') + '" data-hair="' + key + '">' +
         '<svg viewBox="60 -10 240 360">' + dollMarkup(prev, 'hp' + key, false) + '</svg>' + HAIRS[key].name + '</button>';
     });
-    if (useAi) {
-      $('hairPanel').innerHTML = html + '</div><p class="art-note">AI 그림 공주님은 머리색과 피부색이 정해져 있어요. 바꾸고 싶으면 ✏️ 직접 그린 그림을 골라요.</p>';
-      return;
-    }
     html += '</div><h3>🎨 머리 색깔</h3><div class="sw-row">';
     HAIR_COLORS.forEach(function (c) {
       html += '<div class="sw' + (state.hairColor === c ? ' active' : '') + '" style="background:' + c + '" data-hc="' + c + '"></div>';
@@ -1703,6 +1763,7 @@
     Object.keys(chance).forEach(function (slot) { if (Math.random() < chance[slot]) w[slot] = pick(bySlot(slot)).id; });
     state.worn = w;
     state.hair = pick(HAIR_ORDER);
+    if (AI.list.length) state.princess = pick(AI.list).id;
     state.hairColor = pick(HAIR_COLORS);
     renderDoll(); refreshPieces(); renderTabs();
     burst(210, 300); burst(210, 560);
@@ -1716,9 +1777,10 @@
     renderTabs(); refreshPieces();
   });
   $('hairPanel').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-hair],[data-hc],[data-skin],[data-art]');
+    var b = e.target.closest('[data-hair],[data-hc],[data-skin],[data-art],[data-princess]');
     if (!b || b.disabled) return;
     if (b.dataset.art) state.art = b.dataset.art;
+    if (b.dataset.princess) state.princess = b.dataset.princess;
     if (b.dataset.hair) state.hair = b.dataset.hair;
     if (b.dataset.hc) state.hairColor = b.dataset.hc;
     if (b.dataset.skin) state.skin = b.dataset.skin;
