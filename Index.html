@@ -4,7 +4,7 @@
   <base target="_top">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>👑 공주님 옷 입히기</title>
+  <title>👑 성모 공주님 옷 입히기</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
   <style>
@@ -79,10 +79,10 @@
     }
     #game.full #rack { opacity: 0; pointer-events: none; }
     #game.full #dollWrap { left: 430px; }
-    #tabs { position: absolute; left: 10px; top: 4px; right: 10px; display: flex; gap: 8px; justify-content: center; }
+    #tabs { position: absolute; left: 6px; top: 4px; right: 6px; display: flex; gap: 5px; justify-content: center; }
     .tab {
-      font-family: inherit; font-size: 18px;
-      padding: 6px 13px 5px; white-space: nowrap;
+      font-family: inherit; font-size: 16px;
+      padding: 5px 9px 4px; white-space: nowrap;
       border: 3px solid #fff;
       border-radius: 999px;
       background: rgba(255,255,255,.25);
@@ -124,9 +124,9 @@
     .piece:hover .tag { opacity: 1; }
     .piece.dragging .tag { opacity: 0; }
 
-    #hairPanel { position: absolute; left: 20px; top: 70px; right: 20px; display: none; color: #fff; }
-    #hairPanel.show { display: block; }
-    #hairPanel h3 { margin: 6px 4px 10px; font-size: 22px; font-weight: normal; text-shadow: 0 2px 0 rgba(90,0,110,.5); }
+    #princessPanel { position: absolute; left: 20px; top: 70px; right: 20px; display: none; color: #fff; }
+    #princessPanel.show { display: block; }
+    #princessPanel h3 { margin: 6px 4px 10px; font-size: 22px; font-weight: normal; text-shadow: 0 2px 0 rgba(90,0,110,.5); }
     .hair-row { display: flex; gap: 12px; flex-wrap: wrap; }
     .hair-btn {
       width: 124px; border: 4px solid rgba(255,255,255,.6); border-radius: 22px;
@@ -145,12 +145,6 @@
     }
     .sw:hover { transform: scale(1.1); }
     .sw.active { box-shadow: 0 0 0 4px #ff5fb8, 0 3px 6px rgba(0,0,0,.3); transform: scale(1.12); }
-    .art-btn {
-      font-family: inherit; font-size: 18px; padding: 8px 16px; border-radius: 999px; cursor: pointer;
-      border: 3px solid #fff; background: rgba(255,255,255,.3); color: #fff;
-    }
-    .art-btn.active { background: #fff; color: #c2188a; box-shadow: 0 0 0 3px #ff5fb8; }
-    .art-btn:disabled { opacity: .5; cursor: default; }
     .art-note { font-size: 16px; opacity: .9; align-self: center; }
 
     /* ---------- 아래 버튼 ---------- */
@@ -269,11 +263,11 @@
       <div id="rack">
         <div id="tabs"></div>
         <div id="pieces"></div>
-        <div id="hairPanel"></div>
+        <div id="princessPanel"></div>
       </div>
 
       <div id="toolbar">
-        <div class="logo">👑 공주님 옷 입히기</div>
+        <div class="logo">👑 성모 공주님 옷 입히기</div>
         <button class="cloud-btn" id="resetBtn">원래대로</button>
         <button class="cloud-btn gold" id="randomBtn">🎲 랜덤</button>
         <button class="cloud-btn blue" id="fullBtn">전체모습</button>
@@ -308,1014 +302,67 @@
 
   <div class="toast" id="toast"></div>
 
-  <!-- 옷 크기를 재기 위한 숨은 그림판 -->
-  <svg id="measure" viewBox="0 0 360 900" width="360" height="900"
-       style="position:absolute;left:-9999px;top:0;visibility:hidden"></svg>
-
   <script>
   // =====================================================================
-  //  그림 도우미
-  // =====================================================================
-  function shade(hex, p) {
-    var n = parseInt(hex.slice(1), 16);
-    var r = n >> 16, g = (n >> 8) & 255, b = n & 255;
-    var t = p < 0 ? 0 : 255, a = Math.abs(p);
-    r = Math.round((t - r) * a + r); g = Math.round((t - g) * a + g); b = Math.round((t - b) * a + b);
-    return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-  }
-  var mx = function (x) { return 360 - x; };
-  // 왼쪽 절반 윤곽만 적으면 좌우 대칭 도형을 만들어 줍니다.
-  function sym(start, segs) {
-    var d = 'M' + start[0] + ' ' + start[1], pts = [start];
-    segs.forEach(function (s) {
-      d += ' ' + s[0] + s.slice(1).join(' ');
-      pts.push([s[s.length - 2], s[s.length - 1]]);
-    });
-    var last = pts[pts.length - 1];
-    d += ' L' + mx(last[0]) + ' ' + last[1];
-    for (var i = segs.length - 1; i >= 0; i--) {
-      var s = segs[i], prev = pts[i];
-      if (s[0] === 'L') d += ' L' + mx(prev[0]) + ' ' + prev[1];
-      else if (s[0] === 'Q') d += ' Q' + mx(s[1]) + ' ' + s[2] + ' ' + mx(prev[0]) + ' ' + prev[1];
-      else if (s[0] === 'C') d += ' C' + mx(s[3]) + ' ' + s[4] + ' ' + mx(s[1]) + ' ' + s[2] + ' ' + mx(prev[0]) + ' ' + prev[1];
-    }
-    return d + 'Z';
-  }
-  var MIR = function (s) { return '<g transform="matrix(-1 0 0 1 360 0)">' + s + '</g>'; };
-  var BOTH = function (s) { return s + MIR(s); };
-  var OUT = function (c) { return shade(c, -0.4); };
-  // 둥근 느낌을 주는 가로 그라디언트
-  function G(id, c) {
-    return '<linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="0">' +
-      '<stop offset="0" stop-color="' + shade(c, -0.22) + '"/><stop offset=".36" stop-color="' + shade(c, 0.25) + '"/>' +
-      '<stop offset=".62" stop-color="' + c + '"/><stop offset="1" stop-color="' + shade(c, -0.28) + '"/></linearGradient>';
-  }
-  function VG(id, stops) {
-    return '<linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1">' + stops.map(function (s) {
-      return '<stop offset="' + s[0] + '" stop-color="' + s[1] + '"' + (s[2] != null ? ' stop-opacity="' + s[2] + '"' : '') + '/>';
-    }).join('') + '</linearGradient>';
-  }
-  function SH(id) { // 무늬 옷 위에 덮는 그림자
-    return '<linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="0">' +
-      '<stop offset="0" stop-color="#2a0030" stop-opacity=".28"/><stop offset=".35" stop-color="#fff" stop-opacity=".12"/>' +
-      '<stop offset=".6" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#2a0030" stop-opacity=".3"/></linearGradient>';
-  }
-  function fillAttr(id, c, w) {
-    return 'fill="url(#' + id + ')" stroke="' + OUT(c) + '" stroke-width="' + (w || 1.6) + '" stroke-linejoin="round"';
-  }
-  function P(d, attr) { return '<path d="' + d + '" ' + attr + '/>'; }
-  function line(d, c, w, extra) {
-    return '<path d="' + d + '" stroke="' + c + '" stroke-width="' + (w || 1.2) + '" fill="none" stroke-linecap="round" stroke-linejoin="round" ' + (extra || '') + '/>';
-  }
-  function spark(x, y, r, c) {
-    return '<path d="M' + x + ' ' + (y - r) + ' Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y + ' Q' + x + ' ' + y + ' ' + x + ' ' + (y + r) +
-      ' Q' + x + ' ' + y + ' ' + (x - r) + ' ' + y + ' Q' + x + ' ' + y + ' ' + x + ' ' + (y - r) + 'Z" fill="' + (c || '#fff') + '"/>';
-  }
-  function starPath(cx, cy, R, r) {
-    var pts = [];
-    for (var i = 0; i < 10; i++) {
-      var rad = i % 2 ? r : R, a = -Math.PI / 2 + i * Math.PI / 5;
-      pts.push((cx + rad * Math.cos(a)).toFixed(1) + ' ' + (cy + rad * Math.sin(a)).toFixed(1));
-    }
-    return 'M' + pts.join(' L') + 'Z';
-  }
-  function heart(x, y, s, fill, stroke, sw) {
-    return '<path d="M' + x + ' ' + (y + s * 0.9) + ' C' + (x - s * 1.4) + ' ' + y + ' ' + (x - s * 0.9) + ' ' + (y - s * 0.95) + ' ' + x + ' ' + (y - s * 0.35) +
-      ' C' + (x + s * 0.9) + ' ' + (y - s * 0.95) + ' ' + (x + s * 1.4) + ' ' + y + ' ' + x + ' ' + (y + s * 0.9) + 'Z" fill="' + fill + '" stroke="' + (stroke || 'none') + '" stroke-width="' + (sw || 1.2) + '" stroke-linejoin="round"/>';
-  }
-  function flower(x, y, s, c, center) {
-    var out = '';
-    for (var i = 0; i < 5; i++) {
-      var a = i * Math.PI * 2 / 5 - Math.PI / 2;
-      out += '<circle cx="' + (x + Math.cos(a) * s).toFixed(1) + '" cy="' + (y + Math.sin(a) * s).toFixed(1) + '" r="' + (s * 0.85).toFixed(1) +
-        '" fill="' + c + '" stroke="' + shade(c, -0.25) + '" stroke-width=".8"/>';
-    }
-    return out + '<circle cx="' + x + '" cy="' + y + '" r="' + (s * 0.6).toFixed(1) + '" fill="' + (center || '#ffd23f') + '"/>';
-  }
-  function rose(x, y, s, c) {
-    return '<circle cx="' + x + '" cy="' + y + '" r="' + s + '" fill="' + c + '" stroke="' + shade(c, -0.3) + '" stroke-width="1"/>' +
-      line('M' + (x - s * 0.5) + ' ' + y + ' Q' + x + ' ' + (y - s * 0.8) + ' ' + (x + s * 0.5) + ' ' + y + ' Q' + x + ' ' + (y + s * 0.5) + ' ' + (x - s * 0.2) + ' ' + (y - s * 0.1), shade(c, -0.3), 1);
-  }
-  function bow(x, y, s, c) {
-    var d = shade(c, -0.35);
-    return '<path d="M' + (x - 2) + ' ' + (y + 2) + ' L' + (x - s * 0.8) + ' ' + (y + s * 1.7) + ' L' + (x - s * 0.25) + ' ' + (y + s * 1.55) + 'Z M' +
-      (x + 2) + ' ' + (y + 2) + ' L' + (x + s * 0.8) + ' ' + (y + s * 1.7) + ' L' + (x + s * 0.25) + ' ' + (y + s * 1.55) + 'Z" fill="' + shade(c, -0.1) + '" stroke="' + d + '" stroke-width="1.2" stroke-linejoin="round"/>' +
-      '<path d="M' + x + ' ' + y + ' C' + (x - s * 0.6) + ' ' + (y - s * 1.2) + ' ' + (x - s * 1.7) + ' ' + (y - s) + ' ' + (x - s * 1.55) + ' ' + y +
-      ' C' + (x - s * 1.7) + ' ' + (y + s) + ' ' + (x - s * 0.6) + ' ' + (y + s * 1.1) + ' ' + x + ' ' + y + 'Z M' + x + ' ' + y +
-      ' C' + (x + s * 0.6) + ' ' + (y - s * 1.2) + ' ' + (x + s * 1.7) + ' ' + (y - s) + ' ' + (x + s * 1.55) + ' ' + y +
-      ' C' + (x + s * 1.7) + ' ' + (y + s) + ' ' + (x + s * 0.6) + ' ' + (y + s * 1.1) + ' ' + x + ' ' + y + 'Z" fill="' + c + '" stroke="' + d + '" stroke-width="1.2"/>' +
-      '<circle cx="' + x + '" cy="' + y + '" r="' + (s * 0.32) + '" fill="' + shade(c, 0.3) + '" stroke="' + d + '" stroke-width="1.2"/>';
-  }
-  function frill(x1, x2, y, n, depth, fill, stroke) {
-    var w = (x2 - x1) / n, d = 'M' + x1 + ' ' + (y - 7) + ' L' + x1 + ' ' + y;
-    for (var i = 0; i < n; i++) d += ' Q' + (x1 + i * w + w / 2) + ' ' + (y + depth * 2) + ' ' + (x1 + (i + 1) * w) + ' ' + y;
-    d += ' L' + x2 + ' ' + (y - 7) + 'Z';
-    return P(d, 'fill="' + fill + '" stroke="' + stroke + '" stroke-width="1" stroke-linejoin="round"');
-  }
-  function qpt(p0, c, p2, t) {
-    var u = 1 - t;
-    return [u * u * p0[0] + 2 * u * t * c[0] + t * t * p2[0], u * u * p0[1] + 2 * u * t * c[1] + t * t * p2[1]];
-  }
-  function beads(p0, c, p2, n, r, fill, stroke) {
-    var out = '';
-    for (var i = 0; i <= n; i++) {
-      var q = qpt(p0, c, p2, i / n);
-      out += '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="' + r + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1"/>';
-    }
-    return out;
-  }
-  function snowflake(x, y, r, c) {
-    var d = '';
-    for (var i = 0; i < 3; i++) {
-      var a = i * Math.PI / 3, dx = Math.cos(a) * r, dy = Math.sin(a) * r;
-      d += 'M' + (x - dx).toFixed(1) + ' ' + (y - dy).toFixed(1) + ' L' + (x + dx).toFixed(1) + ' ' + (y + dy).toFixed(1) + ' ';
-    }
-    return line(d, c, 1.4);
-  }
-
-  // 공통 소매 모양 (왼팔 기준, BOTH로 양쪽)
-  var SLEEVE_SHORT = 'M127 249 Q99 255 97 298 L95 324 Q112 331 129 324 L133 282Z';
-  var SLEEVE_LONG = 'M127 249 Q99 255 98 300 L92 400 Q88 452 90 497 L115 499 Q118 452 123 402 L132 318 Q134 288 135 268Z';
-
-  // =====================================================================
-  //  공주님 몸
-  // =====================================================================
-  function mixHex(a, b, t) {
-    var x = parseInt(a.slice(1), 16), y = parseInt(b.slice(1), 16), o = 0;
-    [16, 8, 0].forEach(function (s) {
-      var u = (x >> s) & 255, v = (y >> s) & 255;
-      o += Math.round(u + (v - u) * t) << s;
-    });
-    return '#' + (o + (1 << 24)).toString(16).slice(1);
-  }
-  // 피부색에서 섞어 낸 따뜻한 윤곽선 색
-  function warmLine(skin, a) { return mixHex(shade(skin, -a), '#b0404a', 0.2); }
-  // 소수점 찌꺼기(142.60000000000002 같은 것)를 정리
-  function tidy(s) { return s.replace(/(\d+\.\d{3,})/g, function (v) { return String(Math.round(v * 100) / 100); }); }
-  var FACE_D = 'M180 56 C151 56 126 76 125 118 C124.5 145 128 163 138.5 179 C150 196.5 167 209.5 180 210 C193 209.5 210 196.5 221.5 179 C232 163 235.5 145 235 118 C234 76 209 56 180 56Z';
-  function bodySVG(p, skin, noFace) {
-    var sd = warmLine(skin, 0.3), sid = p + 'skin';
-    var sk = 'fill="url(#' + sid + ')" stroke="' + sd + '" stroke-width="1.1" stroke-linejoin="round"';
-    var leg = P('M126 450 C116 520 130 600 140 645 C136 700 142 760 150 836 L168 836 C168 780 176 720 172 645 C178 600 182 540 181 494 Z', sk) +
-      '<ellipse cx="155" cy="628" rx="7" ry="12" fill="url(#' + p + 'kn)"/>' +
-      line('M150 640 Q156 646 162 640', sd, 1.1, 'opacity=".5"') +
-      P('M149 830 Q144 856 149 871 Q159 880 170 871 Q174 852 169 830Z', sk) +
-      line('M153 866 Q159 870 166 866', sd, 1, 'opacity=".45"');
-    var arm = P('M124 254 C109 258 103 276 102 300 C101 334 99 368 97 400 C95 434 94 468 95 500 L111 502 C112 470 115 436 119 402 C122 372 126 344 128 318 C130 298 131 284 132 272 Z', sk) +
-      line('M104 396 Q108 400 114 398', sd, 1, 'opacity=".45"');
-    // 귀는 올림머리일 때만 보입니다 (HAIRS.bun.back 에서 <use> 로 그림)
-    var ear = P('M128 136 C121 130 114.5 137 116 149 C117.5 160 122 167.5 130 167.5 Z', 'fill="' + shade(skin, -0.03) + '" stroke="' + sd + '" stroke-width="1.1"') +
-      line('M125 142 C120 143.5 120 152 123.5 160', sd, 1, 'opacity=".5"') +
-      '<ellipse cx="121.5" cy="152" rx="2.2" ry="5" fill="#ff8fa8" opacity=".25"/>';
-    var uw = '#ffb3d1';
-    return '<defs>' + G(sid, skin) + G(p + 'uw', uw) +
-      '<radialGradient id="' + p + 'face" cx=".5" cy=".45" r=".62"><stop offset="0" stop-color="' + shade(skin, 0.16) + '"/>' +
-      '<stop offset=".72" stop-color="' + skin + '"/><stop offset="1" stop-color="' + shade(skin, -0.08) + '"/></radialGradient>' +
-      '<radialGradient id="' + p + 'kn"><stop offset="0" stop-color="#fff" stop-opacity=".4"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>' +
-      '<g id="' + p + 'ears">' + BOTH(ear) + '</g></defs>' +
-      BOTH(leg) +
-      P('M166 186 L166 240 Q180 247 194 240 L194 186Z', sk) +
-      P(sym([180, 244], [['Q', 170, 244, 166, 238], ['Q', 150, 248, 124, 256], ['Q', 118, 282, 127, 312], ['Q', 134, 342, 148, 372],
-        ['Q', 138, 410, 125, 446], ['Q', 120, 470, 128, 490], ['L', 180, 498]]), sk) +
-      line('M171 251 Q164 256 156 254 M189 251 Q196 256 204 254', sd, 1, 'opacity=".4"') +
-      line('M180 360 L180 366', sd, 1.5, 'opacity=".45"') +
-      // 속옷 (튜브탑 + 반바지)
-      P(sym([180, 292], [['Q', 160, 280, 130, 288], ['Q', 126, 312, 133, 334], ['Q', 160, 342, 180, 340]]), fillAttr(p + 'uw', uw, 1.3)) +
-      line('M140 300 Q160 306 180 304 Q200 306 220 300', '#fff', 1.5, 'opacity=".6"') +
-      P(sym([180, 430], [['Q', 150, 428, 127, 432], ['Q', 121, 450, 124, 466], ['Q', 150, 474, 168, 488], ['L', 180, 486]]), fillAttr(p + 'uw', uw, 1.3)) +
-      bow(180, 436, 5, '#ff6fae') +
-      BOTH(arm) +
-      // 턱 밑 그림자 (셀 애니메이션 느낌)
-      P('M166 192 Q180 214 194 192 L194 212 Q180 229 166 212Z', 'fill="' + warmLine(skin, 0.45) + '" opacity=".3"') +
-      // 얼굴
-      (noFace ? '' : P(FACE_D, 'fill="url(#' + p + 'face)" stroke="' + sd + '" stroke-width="1.2"') + faceSVG(p, skin));
-  }
-
-  function handsSVG(p, skin) {
-    var sd = warmLine(skin, 0.3), fill = 'fill="url(#' + p + 'skin)"';
-    // 몸 쪽으로 살짝 말아 쥔 가느다란 손 (손목 위쪽 선은 그리지 않아요)
-    var edge = 'M95 495 C91.5 503 89.5 512 89.5 521 C89.5 530 91 539 94.5 546 C96.5 550.5 99.5 554 102.5 554.5 C105 555 106.4 552.6 105.2 550.2 ' +
-      'C103.6 547 102.2 543.6 101.8 540 C104 544.5 106.4 548 109 548.6 C111.2 549 112.2 546.8 111 544.6 C109.6 541.8 108.8 538.4 108.8 535 ' +
-      'C111.6 533 113.2 529.5 113.4 524 C113.6 516 112.8 507 111 497';
-    var thumb = 'M111.2 505 C115.4 511 116.6 521 114.4 530 C113.2 534.6 110.6 537 108.6 535.8 C107 534.8 107.6 531.6 108.4 528.6 C109.8 522 110 514 109 508';
-    var hand = P(edge + 'Z', fill) + line(edge, sd, 1.1) +
-      line('M101.8 540 C100.4 534 99.6 529 100 524 M108.8 535 C107 531 105.8 527 105.6 522', sd, 0.9, 'opacity=".4"') +
-      P(thumb + 'Z', fill) + line(thumb, sd, 1) +
-      '<ellipse cx="102.6" cy="551.6" rx="1.5" ry="1.1" fill="#fff" opacity=".55"/><ellipse cx="109.4" cy="546" rx="1.1" ry=".9" fill="#fff" opacity=".5"/>';
-    return BOTH(hand);
-  }
-
-  // 눈 흰자 (왼쪽 눈 기준, 가운데 약 156,150 — 안경 위치와 같음)
-  var EYE_W = 'M138.4 150.6 C142 143.6 148.4 140.4 155.8 140.4 C163.4 140.4 169.4 144 172.6 151.4 C168.6 156.4 162.8 158.8 156 158.8 C148.8 158.8 142.4 156 138.4 150.6Z';
-  function faceSVG(p, skin) {
-    var sd = warmLine(skin, 0.3), ink = '#3a1f2e', ln = warmLine(skin, 0.42);
-    var lid = mixHex(skin, '#c77aa0', 0.4), lip = mixHex(skin, '#cc5060', 0.8), lipL = mixHex(skin, '#da6c76', 0.74), lipD = mixHex(skin, '#983040', 0.66);
-    var eye =
-      // 은은한 아이섀도 + 쌍꺼풀 선 (깜빡일 때 함께 접히도록 눈 그룹 안에)
-      P('M136.8 147 C140.6 139.4 147.8 134.8 156.2 134.6 C164.2 134.6 170 138.6 172.8 146.6 C169.6 141.2 163.6 138.4 156 138.4 C148 138.6 141.6 141.6 136.8 147Z', 'fill="' + lid + '" opacity=".42"') +
-      line('M141.6 138 C146.2 133.8 151.4 132.4 156.8 132.4 C162.6 132.4 167 134.6 170.2 138.4', ln, 0.9, 'opacity=".45"') +
-      P(EYE_W, 'fill="#fffdfb"') +
-      '<g clip-path="url(#' + p + 'eyeclip)">' +
-        // 홍채는 윗눈꺼풀에 살짝 가려지게 (디즈니식 눈매)
-        '<circle cx="156" cy="150.6" r="9.2" fill="url(#' + p + 'iris)" stroke="#173868" stroke-width="1.2"/>' +
-        '<circle cx="156" cy="151" r="3.9" fill="#0f1430"/>' +
-        P('M136 156 C140 142 149 139.6 156 139.6 C163 139.6 170 142 175 152 C168 145.6 162.4 144.2 156 144.2 C149.4 144.2 142.4 147 136 156Z', 'fill="#3a2050" opacity=".3"') +
-      '</g>' +
-      // 아랫눈꺼풀 (바깥쪽이 조금 더 진하게)
-      line('M140.4 153 C144 157.4 149.6 159.8 156 159.8 C160.8 159.8 165 158.6 168.2 156.6', ln, 0.95, 'opacity=".5"') +
-      line('M138.8 151.2 C140 153.6 141.8 155.4 144.2 156.8', ink, 1.2, 'opacity=".65"') +
-      // 윗눈꺼풀 선: 안쪽은 가늘고 바깥쪽으로 굵어지며 날개처럼 올라가요
-      P('M172.6 151.4 C169.4 144 163.4 140.4 155.8 140.4 C148.4 140.4 142 143.6 138.4 150.6 L133.4 146.2 C137.4 141.4 142.8 137.6 149 136.8 ' +
-        'C156 135.8 163.6 136.8 168 140.2 C171 142.8 172.8 146.8 172.6 151.4Z', 'fill="' + ink + '"') +
-      // 바깥쪽 속눈썹 두 가닥
-      P('M136.4 146 Q132.6 144.2 131.8 140.6 Q134.4 143.2 138.2 143.6Z M140.6 141.6 Q137.6 139 137.6 135.6 Q139.8 138.6 142.8 140Z', 'fill="' + ink + '"') +
-      // 눈물샘
-      '<circle cx="171.2" cy="152.6" r=".95" fill="#e8909e" opacity=".8"/>';
-    // 반짝임은 두 눈 모두 같은 방향(왼쪽 위 큰 것, 오른쪽 아래 작은 것)
-    var shine = function (x) {
-      return '<ellipse cx="' + tidy(String(x - 3.4)) + '" cy="147.6" rx="2.5" ry="2.7" fill="#fff"/><circle cx="' + tidy(String(x + 3.6)) + '" cy="154.4" r="1.2" fill="#fff" opacity=".9"/>';
-    };
-    return '<defs><radialGradient id="' + p + 'iris" cx=".5" cy=".72" r=".7"><stop offset="0" stop-color="#b4ecff"/>' +
-      '<stop offset=".45" stop-color="#4a9ad8"/><stop offset="1" stop-color="#1c3f86"/></radialGradient>' +
-      '<radialGradient id="' + p + 'blush"><stop offset="0" stop-color="#ff7a9c" stop-opacity=".45"/><stop offset="1" stop-color="#ff7a9c" stop-opacity="0"/></radialGradient>' +
-      '<clipPath id="' + p + 'eyeclip"><path d="' + EYE_W + '"/></clipPath><clipPath id="' + p + 'fclip"><path d="' + FACE_D + '"/></clipPath></defs>' +
-      '<g clip-path="url(#' + p + 'fclip)">' + BOTH('<ellipse cx="143" cy="176" rx="17" ry="10.5" fill="url(#' + p + 'blush)"/>') + '</g>' +
-      '<g class="eyes">' + eye + MIR(eye) + shine(156) + shine(204) + '</g>' +
-      // 코: 코끝 그늘만 살짝
-      line('M183.2 168.8 Q185.2 173.4 182.6 176.6', ln, 1, 'opacity=".3"') +
-      line('M176.6 176.6 Q180 179 183.4 176.6', ln, 1.1, 'opacity=".6"') +
-      '<ellipse cx="180.6" cy="174.4" rx="1.8" ry="1.1" fill="#fff" opacity=".4"/>' +
-      // 입술 (다문 입 미소, 윗입술 가운데가 살짝 파인 모양)
-      P('M166.8 188 C170.8 186.4 174.8 184.8 178.2 186 C179.2 186.4 180.8 186.4 181.8 186 C185.2 184.8 189.2 186.4 193.2 188 C186.4 190.4 173.6 190.4 166.8 188Z', 'fill="' + lip + '"') +
-      P('M171 189.8 C175.6 191.3 184.4 191.3 189 189.8 C187.4 193.8 183.8 195.6 180 195.6 C176.2 195.6 172.6 193.8 171 189.8Z', 'fill="' + lipL + '"') +
-      line('M166.4 187.6 C172 190.8 176.4 191.2 180 191.2 C183.6 191.2 188 190.8 193.6 187.6', lipD, 1.1) +
-      line('M165.2 186.2 Q165.8 188 167.4 188.4 M194.8 186.2 Q194.2 188 192.6 188.4', lipD, 0.9, 'opacity=".5"') +
-      '<ellipse cx="180" cy="193.4" rx="3.2" ry=".9" fill="#fff" opacity=".35"/>';
-  }
-
-  // =====================================================================
-  //  머리 모양 — 여러 겹의 머리카락 다발로 그립니다
-  // =====================================================================
-  // 점들을 부드럽게 지나는 곡선 위의 점들 (Catmull-Rom)
-  function crSample(pts, n) {
-    var out = [];
-    for (var i = 0; i < pts.length - 1; i++) {
-      var p0 = pts[i > 0 ? i - 1 : 0], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
-      for (var k = 0; k < n; k++) {
-        var t = k / n, t2 = t * t, t3 = t2 * t, o = [];
-        for (var j = 0; j < 2; j++)
-          o[j] = 0.5 * (2 * p1[j] + (p2[j] - p0[j]) * t + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * t2 + (3 * p1[j] - p0[j] - 3 * p2[j] + p3[j]) * t3);
-        out.push(o);
-      }
-    }
-    out.push(pts[pts.length - 1].slice());
-    return out;
-  }
-  // 숫자를 짧게 (0.5 → .5, 음수 앞 빈칸 생략)
-  function nums(a) {
-    var s = '';
-    a.forEach(function (v, i) {
-      var t = String(Math.round(v * 100) / 100).replace(/^(-?)0\./, '$1.');
-      s += (i && t.charAt(0) !== '-' ? ' ' : '') + t;
-    });
-    return s;
-  }
-  // 점들을 지나는 부드러운 경로 (상대 좌표 c 명령으로 짧게). q = 반올림 단위
-  function crPath(pts, cont, q) {
-    var r = function (v) { return Math.round(v / q) * q; };
-    var R = pts.map(function (a) { return [r(a[0]), r(a[1])]; }), d = (cont ? 'L' : 'M') + nums(R[0]) + 'c', seg = [];
-    for (var i = 0; i < R.length - 1; i++) {
-      var p0 = R[i > 0 ? i - 1 : 0], p1 = R[i], p2 = R[i + 1], p3 = R[i + 2 < R.length ? i + 2 : i + 1];
-      seg.push(r((p2[0] - p0[0]) / 6), r((p2[1] - p0[1]) / 6), r(p2[0] - (p3[0] - p1[0]) / 6) - p1[0], r(p2[1] - (p3[1] - p1[1]) / 6) - p1[1], p2[0] - p1[0], p2[1] - p1[1]);
-    }
-    return d + nums(seg);
-  }
-  // 가운데 선 c 를 따라 굵기 fw, 치우침 fo 인 띠 모양
-  function band(c, i0, i1, fw, fo, q) {
-    var L = [], R = [];
-    for (var i = i0; i <= i1; i++) {
-      var a = c[Math.max(i - 1, 0)], b = c[Math.min(i + 1, c.length - 1)];
-      var tx = b[0] - a[0], ty = b[1] - a[1], l = Math.sqrt(tx * tx + ty * ty) || 1, nx = -ty / l, ny = tx / l;
-      var s = (i - i0) / Math.max(i1 - i0, 1), w = fw(i, s), o = fo(i, s);
-      L.push([c[i][0] + nx * (o + w), c[i][1] + ny * (o + w)]);
-      R.push([c[i][0] + nx * (o - w), c[i][1] + ny * (o - w)]);
-    }
-    return crPath(L, false, q) + crPath(R.reverse(), true, q) + 'Z';
-  }
-  // 머리 다발: pts = 가운데 선, ws = 각 점의 굵기.
-  // o.h 윤기, o.s 그늘, o.f 결 (각 [시작, 끝, 치우침, 굵기]); false 면 생략. o.lo = 뒷머리처럼 간단하게
-  function mkLock(pts, ws, o) {
-    o = o || {};
-    var mw = Math.max.apply(null, ws), q = o.q || (o.lo ? 1 : mw < 8 ? 0.2 : 0.5), v = ((pts[0][0] * 7 + pts[0][1] * 3) % 10) / 10;
-    var W = function (i, S) { var f = i / S, k = Math.min(Math.floor(f), ws.length - 2); return ws[k] + (ws[k + 1] - ws[k]) * (f - k); };
-    var body = function (S, q) {
-      var c = crSample(pts, S);
-      return band(c, 0, c.length - 1, function (i) { return W(i, S) / 2; }, function () { return 0; }, q);
-    };
-    // 윤기·그늘·결은 성기게 뽑은 점으로 (그림 크기를 줄이려고)
-    var PS = o.lo ? 1 : 2, c = crSample(pts, PS), n = c.length - 1;
-    var part = function (spec, abs) {
-      if (!spec) return '';
-      return band(c, Math.round(spec[0] * n), Math.round(spec[1] * n),
-        function (i, s) { return (abs ? spec[3] : spec[3] * W(i, PS)) * Math.sin(Math.PI * s); },
-        function (i) { return spec[2] * W(i, PS); }, 1);
-    };
-    return {
-      mw: mw,
-      b: o.lo ? body(1, 1) : body(2, q),
-      sb: o.lo ? '' : body(1, 1), // 이마 그림자용 간단한 모양
-      h: part(o.h === undefined ? [0.03 + v * 0.14, 0.42 + v * 0.22, 0.2 + v * 0.1, 0.12 + v * 0.06] : o.h),
-      h2: part(o.h2 === undefined ? (o.lo ? false : [0.55 + v * 0.1, 0.8 + v * 0.08, 0.26, 0.08]) : o.h2),
-      s: part(o.s === undefined ? [0.28, 0.97, -0.2, 0.14] : o.s),
-      f: part(o.f === undefined ? [0.1 + v * 0.1, 0.86, 0.02 - v * 0.08, 0.55] : o.f, true)
-    };
-  }
-  function flipO(o) {
-    o = o || {}; var r = { lo: o.lo };
-    ['h', 'h2', 's', 'f'].forEach(function (k) { var v = o[k]; r[k] = v ? [v[0], v[1], -v[2], v[3]] : v; });
-    return r;
-  }
-  // 왼쪽 다발과 살짝 다르게 흔들린 오른쪽 다발
-  function pair(pts, ws, o, jit) {
-    var j = jit == null ? 1 : jit;
-    var right = pts.map(function (q, i) {
-      return i === 0 ? [360 - q[0], q[1]] : [360 - q[0] + ((i * 37) % 7 - 3) * 0.6 * j, q[1] + ((i * 53) % 7 - 3) * 0.8 * j];
-    });
-    return [mkLock(pts, ws, o), mkLock(right, ws, flipO(o))];
-  }
-  function locks(list, jit, lo) { // [[pts, ws, o], ...] → 왼쪽+오른쪽 다발
-    var out = [];
-    list.forEach(function (a) {
-      var o = a[2] || {};
-      if (lo) { o = JSON.parse(JSON.stringify(o)); o.lo = true; }
-      out = out.concat(pair(a[0], a[1], o, jit));
-    });
-    return out;
-  }
-  function one(list) { return list.map(function (a) { return mkLock(a[0], a[1], a[2]); }); }
-  function drawLocks(p, c, arr, back) {
-    var hi = shade(c, 0.55), dk = shade(c, -0.34), ln = shade(c, -0.45), st = shade(c, back ? -0.42 : -0.38);
-    return arr.map(function (L) {
-      var sw = L.mw < 7 ? 0.7 : L.mw < 12 ? 0.9 : 1.2;
-      return P(L.b, 'fill="url(#' + p + (back ? 'hairB' : 'hair') + ')" stroke="' + st + '" stroke-width="' + sw + '" stroke-linejoin="round"') +
-        (L.s ? P(L.s, 'fill="' + dk + '" opacity=".36"') : '') +
-        (L.h ? P(L.h, 'fill="' + hi + '" opacity="' + (back ? '.3' : '.6') + '"') : '') +
-        (L.h2 ? P(L.h2, 'fill="' + hi + '" opacity="' + (back ? '.25' : '.45') + '"') : '') +
-        (L.f ? P(L.f, 'fill="' + ln + '" opacity=".45"') : '');
-    }).join('');
-  }
-  function arcPts(cx, cy, r0, r1, a0, a1, n) {
-    var out = [];
-    for (var i = 0; i <= n; i++) {
-      var t = i / n, a = (a0 + (a1 - a0) * t) * Math.PI / 180, r = r0 + (r1 - r0) * t;
-      out.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
-    }
-    return out;
-  }
-  // 눈썹 (머리색을 따라갑니다 — 눈 그룹 밖이라 깜빡여도 그대로)
-  var BROW = mkLock([[137, 119], [144.5, 112.8], [153, 110.4], [162, 111.4], [169, 115.4]], [0.2, 1, 1.4, 1.6, 1.3], { h: false, h2: false, s: false, f: false, q: 0.1 });
-  function brows(c) { return BOTH(P(BROW.b, 'fill="' + mixHex(shade(c, -0.42), '#4a2a2a', 0.22) + '" opacity=".9"')); }
-
-  function hairDefs(p, c) {
-    return '<defs>' + VG(p + 'hair', [[0, shade(c, 0.2)], [0.5, c], [1, shade(c, -0.16)]]) +
-      VG(p + 'hairB', [[0, shade(c, -0.1)], [1, shade(c, -0.3)]]) +
-      '<radialGradient id="' + p + 'hairC" cx=".42" cy=".3" r=".75"><stop offset="0" stop-color="' + shade(c, 0.22) + '"/>' +
-      '<stop offset=".6" stop-color="' + c + '"/><stop offset="1" stop-color="' + shade(c, -0.18) + '"/></radialGradient></defs>';
-  }
-  // 앞머리가 이마에 드리우는 옅은 그림자 (얼굴 안쪽에만)
-  function capShadow(p, shapes) {
-    return '<defs><clipPath id="' + p + 'fc"><path d="' + FACE_D + '"/></clipPath></defs>' +
-      '<g clip-path="url(#' + p + 'fc)"><g transform="translate(1 4.5)" fill="#6b2f3f" opacity=".16">' +
-      shapes.map(function (d) { return '<path d="' + (d.sb || d.b || d) + '"/>'; }).join('') + '</g></g>';
-  }
-  function hairAttrB(p, c) { return 'fill="url(#' + p + 'hairB)" stroke="' + shade(c, -0.42) + '" stroke-width="1.3" stroke-linejoin="round"'; }
-  function capAttr(p, c) { return 'fill="url(#' + p + 'hairC)" stroke="' + shade(c, -0.38) + '" stroke-width="1.3" stroke-linejoin="round"'; }
-  // 앞머리 한 벌: 눈썹 → 옆 다발 → 그림자 → 정수리 → 앞머리 다발
-  function frontHair(p, c, H, extra) {
-    var tops = [H.cap].concat(H.top);
-    return brows(c) + drawLocks(p, c, H.side) + capShadow(p, tops) + P(H.cap, capAttr(p, c)) +
-      drawLocks(p, c, H.top) + (extra || '');
-  }
-
-  // ---- 웨이브: 옆 가르마 + 이마를 덮는 큰 물결, 가슴 앞으로 내려온 곱슬 다발 ----
-  var WAVY = {
-    mass: sym([180, 36], [['C', 120, 34, 100, 80, 98, 150], ['C', 96, 206, 82, 250, 82, 300], ['C', 82, 350, 76, 410, 80, 456],
-      ['C', 90, 486, 122, 490, 140, 478], ['L', 180, 470]]),
-    back: locks([
-      [[[124, 60], [106, 100], [96, 150], [92, 200], [80, 250], [78, 300], [92, 350], [88, 400], [74, 440], [76, 470], [92, 480], [100, 468]], [6, 24, 30, 32, 32, 32, 30, 28, 22, 14, 6, 0]],
-      [[[140, 62], [120, 108], [108, 160], [106, 210], [94, 258], [92, 306], [106, 354], [100, 404], [88, 444], [94, 472], [110, 480], [116, 466]], [6, 22, 28, 30, 30, 30, 28, 24, 16, 9, 4, 0]],
-      [[[152, 66], [134, 120], [124, 180], [122, 230], [112, 276], [112, 326], [126, 372], [120, 418], [110, 446], [116, 466], [130, 464]], [6, 20, 24, 26, 26, 26, 24, 18, 10, 4, 0]]
-    ], 1, true),
-    side: locks([
-      // 어깨 뒤로 넘어가는 짧은 다발
-      [[[118, 110], [108, 156], [109, 200], [113, 232], [119, 250], [126, 254]], [6, 15, 17, 14, 7, 0]],
-      // 가슴 앞으로 내려와 끝이 동그랗게 말린 다발 (소매를 가리지 않게 x ≥ 112)
-      [[[122, 94], [115, 140], [117, 186], [121, 224], [124, 256], [122, 288], [125, 314], [134, 328], [142, 322], [139, 312], [132, 315]], [8, 20, 23, 23, 21, 19, 15, 10, 6, 3, 0]]
-    ]),
-    cap: 'M120 148 C113 80 138 36 180 34 C224 36 248 78 241 148 C236 124 220 108 200 100 C182 94 168 82 158 56 C146 62 132 84 126 124 Q123 138 120 148 Z',
-    top: one([
-      [[[156, 40], [140, 46], [128, 62], [121, 90], [119, 120], [120, 146]], [3, 16, 20, 20, 14, 0]],
-      [[[157, 52], [144, 62], [134, 82], [128, 108], [126, 136]], [3, 12, 16, 12, 0]],
-      [[[162, 36], [192, 38], [220, 54], [238, 84], [244, 116], [241, 150]], [3, 20, 26, 26, 18, 0]],
-      [[[160, 44], [182, 54], [204, 70], [226, 88], [240, 112], [242, 144]], [3, 20, 26, 24, 16, 0]],
-      [[[158, 54], [166, 72], [182, 88], [204, 97], [224, 104], [236, 120], [238, 140]], [3, 14, 20, 20, 16, 8, 0]]
-    ])
-  };
-  // ---- 긴 생머리: 가운데 가르마, 관자놀이를 감싸며 곧게 떨어지는 머리 ----
-  var STRAIGHT = {
-    mass: sym([180, 36], [['C', 118, 34, 98, 84, 98, 150], ['L', 92, 462], ['Q', 104, 480, 124, 474], ['L', 180, 468]]),
-    back: locks([
-      [[[122, 66], [104, 126], [98, 200], [95, 300], [93, 400], [94, 450], [100, 470], [112, 468]], [6, 28, 30, 30, 30, 26, 12, 0], { f: [0.1, 0.9, 0.1, 0.55] }],
-      [[[140, 66], [120, 136], [114, 220], [110, 320], [108, 420], [112, 462], [124, 478], [132, 470]], [6, 24, 26, 26, 26, 20, 8, 0]],
-      [[[152, 72], [136, 150], [130, 240], [126, 340], [126, 430], [134, 468], [146, 466]], [6, 22, 24, 24, 22, 10, 0]]
-    ], 0.3, true),
-    side: locks([
-      [[[121, 112], [111, 170], [110, 214], [114, 240], [120, 252], [126, 254]], [6, 16, 16, 12, 6, 0]],
-      [[[127, 100], [121, 160], [121, 218], [124, 268], [125, 312], [128, 336], [133, 342]], [8, 22, 23, 22, 19, 10, 0], { h: [0.1, 0.42, 0.12, 0.26] }]
-    ], 0.3),
-    cap: sym([180, 34], [['C', 128, 34, 112, 76, 119, 146], ['Q', 122, 134, 125, 124], ['C', 129, 108, 140, 92, 154, 82], ['C', 164, 75, 173, 71, 180, 70]]),
-    top: locks([
-      [[[179, 38], [156, 42], [134, 60], [123, 94], [120, 140]], [3, 20, 24, 18, 0], { h: [0.12, 0.5, 0.1, 0.3] }],
-      [[[180, 58], [170, 67], [158, 78], [146, 92], [137, 110], [131, 132], [128, 150]], [4, 15, 20, 20, 17, 10, 0], { h: [0.1, 0.45, 0.1, 0.28] }]
-    ], 0.3)
-  };
-  // ---- 양갈래: 높이 묶은 긴 곱슬 양갈래 + 리본, 옆으로 흐르는 부드러운 앞머리 ----
-  var TWIN = {
-    mass: sym([180, 36], [['C', 120, 34, 104, 84, 110, 140], ['Q', 118, 170, 140, 176], ['L', 180, 176]]),
-    back: locks([
-      [[[120, 80], [100, 70], [80, 78], [66, 104], [62, 150], [58, 200], [62, 250], [54, 300], [54, 350], [66, 384], [82, 384], [84, 370]], [8, 22, 30, 36, 38, 38, 36, 32, 24, 12, 4, 0]],
-      [[[122, 84], [104, 86], [90, 106], [84, 150], [82, 200], [86, 250], [78, 300], [80, 340], [94, 360], [104, 352]], [6, 18, 24, 28, 30, 30, 26, 16, 6, 0]],
-      [[[120, 78], [104, 64], [84, 62], [68, 74], [58, 96], [54, 124]], [6, 14, 18, 16, 10, 0]]
-    ], 1, true),
-    side: locks([
-      [[[127, 104], [121, 128], [122, 150], [127, 164], [134, 172]], [5, 8, 8, 5, 0]]
-    ]),
-    cap: sym([180, 34], [['C', 124, 34, 112, 70, 118, 132], ['Q', 123, 118, 127, 106], ['C', 135, 86, 154, 72, 180, 70]]),
-    top: one([
-      // 부드러운 앞머리: 끝이 짧고 둥글게 모여 뾰족하지 않아요
-      [[[122, 60], [118, 84], [120, 110], [126, 128]], [3, 14, 12, 0], { f: false }],
-      [[[238, 60], [242, 84], [240, 110], [234, 128]], [3, 14, 12, 0], { f: false }],
-      [[[190, 38], [170, 42], [152, 52], [140, 68], [134, 86], [133, 98], [135, 104]], [3, 16, 22, 22, 18, 12, 0]],
-      [[[194, 38], [212, 44], [226, 58], [232, 78], [232, 94], [229, 101]], [3, 16, 20, 18, 11, 0]],
-      [[[190, 44], [176, 52], [164, 66], [157, 82], [156, 94], [158, 99]], [3, 14, 18, 15, 9, 0]],
-      [[[196, 46], [206, 60], [212, 76], [212, 90], [209, 96]], [3, 13, 15, 10, 0]],
-      [[[192, 46], [186, 60], [180, 74], [177, 86], [178, 92]], [3, 12, 12, 8, 0]]
-    ])
-  };
-  // ---- 올림머리: 장미처럼 감아올린 쪽머리 + 곱슬 잔머리, 귀가 살짝 보여요 ----
-  var BUN = {
-    mass: sym([180, 36], [['C', 120, 34, 104, 84, 110, 140], ['Q', 118, 170, 140, 176], ['L', 180, 176]]),
-    bun: one([
-      [arcPts(210, 50, 58, 58, 176, 276, 6), [16, 16, 16, 16, 16, 16, 16], { lo: true }],
-      [arcPts(210, 50, 43, 43, 176, 280, 6), [16, 16, 16, 16, 16, 16, 16], { lo: true }],
-      [arcPts(210, 50, 29, 29, 176, 284, 6), [16, 16, 16, 16, 16, 16, 16], { lo: true }],
-      [arcPts(210, 50, 15, 15, 170, 290, 5), [14, 14, 14, 14, 14, 14], { lo: true }]
-    ]),
-    side: locks([
-      [[[126, 110], [120, 132], [125, 152], [119, 172], [121, 190], [128, 201]], [3, 5, 5, 4.5, 3, 0], { h2: false, s: false, f: false }],
-      [[[131, 118], [128, 138], [132, 154], [130, 168]], [2, 4, 3, 0], { h2: false, s: false, f: false }]
-    ], 0.5),
-    cap: sym([180, 34], [['C', 126, 34, 112, 76, 119, 138], ['Q', 124, 124, 128, 110], ['C', 134, 88, 152, 70, 180, 64]]),
-    top: one([
-      [[[127, 136], [121, 104], [128, 72], [146, 50], [168, 38], [180, 36]], [3, 16, 22, 22, 14, 3], { h: [0.15, 0.75, 0.22, 0.18] }],
-      [[[233, 136], [239, 104], [232, 72], [214, 50], [192, 38], [180, 36]], [3, 16, 22, 22, 14, 3], { h: [0.15, 0.75, -0.22, 0.18], s: [0.28, 0.97, 0.2, 0.14] }],
-      [[[132, 120], [134, 92], [148, 66], [166, 48], [179, 36]], [3, 12, 16, 12, 2], { h: [0.15, 0.8, 0.2, 0.2] }],
-      [[[228, 120], [226, 92], [212, 66], [194, 48], [181, 36]], [3, 12, 16, 12, 2], { h: [0.15, 0.8, -0.2, 0.2], s: [0.28, 0.97, 0.2, 0.14] }],
-      [[[176, 38], [156, 48], [140, 66], [130, 92], [128, 114], [134, 126]], [3, 16, 20, 18, 8, 0]]
-    ])
-  };
-  // ---- 단발: 반대쪽 옆 가르마, 끝이 안으로 말린 둥근 단발 ----
-  var BOB = {
-    mass: sym([180, 34], [['C', 114, 34, 94, 90, 96, 160], ['C', 97, 196, 104, 220, 122, 228], ['Q', 150, 234, 180, 232]]),
-    back: locks([
-      [[[124, 66], [104, 116], [96, 166], [98, 206], [112, 226], [130, 228], [136, 218]], [6, 26, 28, 26, 16, 6, 0]]
-    ], 1, true),
-    side: locks([
-      [[[120, 112], [106, 160], [102, 196], [108, 220], [124, 230], [132, 222]], [6, 20, 22, 18, 6, 0]],
-      [[[126, 98], [116, 140], [112, 184], [118, 212], [132, 226], [148, 222], [150, 212]], [8, 26, 30, 24, 14, 4, 0]]
-    ]),
-    cap: 'M240 148 C247 80 222 36 180 34 C136 36 112 78 119 148 C124 124 140 108 160 100 C178 94 192 82 202 56 C214 62 228 84 234 124 Q237 138 240 148 Z',
-    top: one([
-      [[[204, 40], [220, 46], [232, 62], [239, 90], [241, 120], [240, 146]], [3, 16, 20, 20, 14, 0]],
-      [[[203, 52], [216, 62], [226, 82], [232, 108], [234, 136]], [3, 12, 16, 12, 0]],
-      [[[198, 36], [168, 38], [140, 54], [122, 84], [116, 116], [119, 150]], [3, 20, 26, 26, 18, 0]],
-      [[[200, 44], [178, 54], [156, 70], [134, 88], [120, 112], [118, 144]], [3, 20, 26, 24, 16, 0]],
-      [[[202, 54], [194, 72], [178, 88], [156, 97], [136, 104], [124, 120], [122, 140]], [3, 14, 20, 20, 16, 8, 0]]
-    ])
-  };
-  function tieBow(x, y) {
-    var st = 'fill="#ff9ccb" stroke="#d2407f" stroke-width="1.1" stroke-linejoin="round"';
-    return P('M' + (x - 3) + ' ' + (y + 2) + ' C' + (x - 12) + ' ' + (y + 16) + ' ' + (x - 12) + ' ' + (y + 30) + ' ' + (x - 22) + ' ' + (y + 44) +
-        ' L' + (x - 15) + ' ' + (y + 42) + ' L' + (x - 14) + ' ' + (y + 50) + ' C' + (x - 6) + ' ' + (y + 34) + ' ' + (x - 6) + ' ' + (y + 18) + ' ' + (x + 1) + ' ' + (y + 4) + 'Z', st) +
-      P('M' + (x - 1) + ' ' + (y + 3) + ' C' + (x - 2) + ' ' + (y + 18) + ' ' + (x - 6) + ' ' + (y + 32) + ' ' + (x - 6) + ' ' + (y + 50) +
-        ' L' + (x) + ' ' + (y + 46) + ' L' + (x + 3) + ' ' + (y + 53) + ' C' + (x + 2) + ' ' + (y + 34) + ' ' + (x + 5) + ' ' + (y + 18) + ' ' + (x + 3) + ' ' + (y + 3) + 'Z', st) +
-      bow(x, y, 9, '#ff7fb8');
-  }
-  // 정수리 머리 모양은 한 번만 계산해 둡니다
-  var BUN_E = '<ellipse cx="180" cy="24" rx="28" ry="20"';
-  var HAIRS = {
-    wavy: {
-      name: '웨이브',
-      back: function (p, c) { return P(WAVY.mass, hairAttrB(p, c)) + drawLocks(p, c, WAVY.back, true); },
-      front: function (p, c) { return frontHair(p, c, WAVY); }
-    },
-    straight: {
-      name: '긴 생머리',
-      back: function (p, c) { return P(STRAIGHT.mass, hairAttrB(p, c)) + drawLocks(p, c, STRAIGHT.back, true); },
-      front: function (p, c) { return frontHair(p, c, STRAIGHT); }
-    },
-    twin: {
-      name: '양갈래',
-      back: function (p, c) { return drawLocks(p, c, TWIN.back, true) + P(TWIN.mass, hairAttrB(p, c)); },
-      front: function (p, c) { return frontHair(p, c, TWIN, tieBow(120, 80) + MIR(tieBow(120, 80))); }
-    },
-    bun: {
-      name: '올림머리',
-      // 귀는 몸(bodySVG)의 <defs> 에 있는 것을 가져다 씁니다 — 몸보다 먼저 그려져 얼굴 뒤에 숨어요
-      back: function (p, c) { return P(BUN.mass, hairAttrB(p, c)) + '<use href="#' + p.replace(/h$/, 'b') + 'ears"/>'; },
-      front: function (p, c) {
-        return frontHair(p, c, BUN,
-          '<defs><clipPath id="' + p + 'bunc">' + BUN_E + '/></clipPath></defs>' + BUN_E + ' fill="url(#' + p + 'hairB)"/>' +
-          '<g clip-path="url(#' + p + 'bunc)">' + drawLocks(p, c, BUN.bun) + '</g>' + BUN_E + ' fill="none" stroke="' + shade(c, -0.38) + '" stroke-width="1.4"/>');
-      }
-    },
-    bob: {
-      name: '단발',
-      back: function (p, c) { return P(BOB.mass, hairAttrB(p, c)) + drawLocks(p, c, BOB.back, true); },
-      front: function (p, c) { return frontHair(p, c, BOB); }
-    }
-  };
-  var HAIR_ORDER = ['wavy', 'straight', 'twin', 'bun', 'bob'];
-  var HAIR_COLORS = ['#c8742f', '#f4cf6a', '#6b4028', '#2d2433', '#f59ac4', '#a88bea', '#8fd0f0', '#ececf4'];
-  var SKIN_COLORS = ['#ffe6d8', '#f8d4b8', '#e4b089', '#b98260'];
-
-  // =====================================================================
-  //  옷 (모두 공주님 몸 좌표에 맞춰 그림)
+  //  AI 그림 옷 (GitHub 저장소 assets/princess/clothes 폴더)
+  //  - 로즈 공주님 그림에 옷만 입혀서 AI로 그린 뒤, 옷 부분만 오려 낸 투명 그림이에요
+  //  - 로즈 그림과 같은 자리에 있어서 로즈의 맞춤값으로 그리면 어느 공주님에게나 맞아요
+  //  - 파일 이름은 id 에서 앞의 'ai_' 를 뺀 것 (예: ai_dress_rose → dress_rose.png)
   // =====================================================================
   var ITEMS = [
-    // ---------------- 상의 ----------------
-    { id: 'top_heart', slot: 'top', name: '하트 티셔츠', draw: function (p) {
-      var c = '#ffffff';
-      return '<defs>' + G(p + 'a', c) + '</defs>' +
-        P(sym([180, 254], [['Q', 170, 254, 164, 240], ['Q', 146, 246, 126, 252], ['Q', 120, 282, 127, 312], ['Q', 133, 346, 144, 382],
-          ['Q', 146, 392, 148, 398], ['Q', 166, 402, 180, 402]]), fillAttr(p + 'a', '#e6dff0')) +
-        BOTH(P(SLEEVE_SHORT, fillAttr(p + 'a', '#e6dff0')) + line('M96 316 Q112 323 130 316', '#ff8fb8', 3)) +
-        line('M164 241 Q180 258 196 241', '#ff8fb8', 3) +
-        heart(180, 318, 22, '#ff6fa5', '#e0457f', 1.5) + heart(180, 318, 12, '#ffb3d1') +
-        spark(206, 292, 6, '#ffb3d1') + spark(152, 350, 5, '#ffb3d1');
-    } },
-    { id: 'top_blouse', slot: 'top', name: '리본 블라우스', draw: function (p) {
-      var c = '#fff1d2';
-      return '<defs>' + G(p + 'a', c) + '</defs>' +
-        P(sym([180, 252], [['Q', 168, 252, 164, 240], ['Q', 146, 246, 126, 252], ['Q', 120, 282, 127, 312], ['Q', 133, 346, 146, 372],
-          ['Q', 134, 388, 124, 408], ['Q', 150, 418, 180, 416]]), fillAttr(p + 'a', c)) +
-        line('M146 372 Q180 380 214 372', OUT(c), 1.4) +
-        BOTH(line('M140 382 L134 408 M156 380 L154 414', OUT(c), 1, 'opacity=".5"')) +
-        BOTH(P('M129 246 Q90 242 91 286 Q93 308 111 310 Q126 308 133 294Z', fillAttr(p + 'a', c)) +
-          line('M96 300 Q110 314 128 302', '#ff9fc4', 3.5) + line('M104 262 Q108 282 112 300', OUT(c), 1, 'opacity=".5"')) +
-        BOTH(P('M164 239 Q168 256 180 258 L180 266 Q160 266 156 244Z', 'fill="#fff" stroke="' + OUT(c) + '" stroke-width="1.2"')) +
-        '<g fill="#ff9fc4" stroke="#d9709b"><circle cx="180" cy="296" r="3"/><circle cx="180" cy="322" r="3"/><circle cx="180" cy="348" r="3"/></g>' +
-        bow(180, 262, 9, '#ff6fae');
-    } },
-    { id: 'top_tube', slot: 'top', name: '튜브탑', draw: function (p) {
-      var c = '#ff4f6d';
-      return '<defs>' + G(p + 'a', c) + '</defs>' +
-        P(sym([180, 290], [['Q', 160, 277, 129, 285], ['Q', 124, 314, 132, 344], ['Q', 160, 352, 180, 350]]), fillAttr(p + 'a', c)) +
-        line('M134 300 Q180 312 226 300 M134 316 Q180 328 226 316 M134 332 Q180 344 226 332', shade(c, -0.3), 1.2, 'opacity=".6"') +
-        line('M140 292 Q170 290 176 300', '#fff', 2, 'opacity=".5"') +
-        bow(180, 300, 8, '#ffd1dc');
-    } },
-    { id: 'top_knit', slot: 'top', name: '줄무늬 니트', draw: function (p) {
-      var c = '#8fc9ff';
-      var pat = '<pattern id="' + p + 'st" patternUnits="userSpaceOnUse" width="20" height="18"><rect width="20" height="18" fill="' + c + '"/><rect y="9" width="20" height="9" fill="#ffffff"/></pattern>';
-      var body = sym([180, 250], [['Q', 168, 250, 164, 238], ['Q', 146, 246, 126, 252], ['Q', 120, 282, 127, 312], ['Q', 133, 346, 142, 386],
-        ['L', 140, 404], ['Q', 160, 408, 180, 408]]);
-      return '<defs>' + pat + SH(p + 'sh') + '</defs>' +
-        P(body, 'fill="url(#' + p + 'st)" stroke="' + OUT(c) + '" stroke-width="1.6" stroke-linejoin="round"') + P(body, 'fill="url(#' + p + 'sh)"') +
-        BOTH(P(SLEEVE_LONG, 'fill="url(#' + p + 'st)" stroke="' + OUT(c) + '" stroke-width="1.6" stroke-linejoin="round"') + P(SLEEVE_LONG, 'fill="url(#' + p + 'sh)"') +
-          P('M90 484 L115 486 L115 499 L90 497Z', 'fill="#5aa5e8" stroke="' + OUT(c) + '" stroke-width="1.2"')) +
-        P(sym([180, 394], [['L', 142, 390], ['L', 140, 404], ['Q', 160, 408, 180, 408]]), 'fill="#5aa5e8" stroke="' + OUT(c) + '" stroke-width="1.2"') +
-        line('M164 239 Q180 254 196 239', '#5aa5e8', 5) + heart(206, 300, 7, '#ff6fa5');
-    } },
-    { id: 'top_cami', slot: 'top', name: '프릴 캐미솔', draw: function (p) {
-      var c = '#c7a6ff';
-      var lace = '';
-      for (var x = 134; x <= 226; x += 8) lace += '<circle cx="' + x + '" cy="' + (292 - Math.sin((x - 134) / 92 * Math.PI) * 4).toFixed(1) + '" r="3.5" fill="#fff" stroke="#b9a3e8" stroke-width=".8"/>';
-      return '<defs>' + G(p + 'a', c) + '</defs>' +
-        BOTH(line('M146 292 L157 242', shade(c, -0.25), 3)) +
-        frill(141, 219, 388, 9, 7, shade(c, 0.5), OUT(c)) +
-        P(sym([180, 296], [['Q', 160, 286, 131, 291], ['Q', 125, 318, 133, 344], ['Q', 140, 370, 143, 388], ['Q', 162, 392, 180, 392]]), fillAttr(p + 'a', c)) +
-        lace + bow(180, 300, 6, '#ff8fc8') +
-        line('M160 310 Q156 350 152 386 M200 310 Q204 350 208 386', shade(c, -0.25), 1, 'opacity=".5"');
-    } },
-    { id: 'top_sailor', slot: 'top', name: '세일러 블라우스', draw: function (p) {
-      var c = '#ffffff', navy = '#2a3f8f';
-      return '<defs>' + G(p + 'a', c) + G(p + 'n', navy) + '</defs>' +
-        P(sym([180, 300], [['L', 164, 240], ['Q', 146, 246, 126, 252], ['Q', 120, 282, 127, 312], ['Q', 133, 346, 144, 382], ['Q', 146, 394, 148, 400],
-          ['Q', 166, 404, 180, 404]]), fillAttr(p + 'a', '#dcd6ea')) +
-        BOTH(P(SLEEVE_SHORT, fillAttr(p + 'a', '#dcd6ea')) + line('M96 312 Q112 319 130 312', navy, 3) + line('M96 318 Q112 325 130 318', navy, 1.5) +
-          P('M164 240 Q140 246 124 254 Q126 272 138 282 L180 318 L180 304 Z', fillAttr(p + 'n', navy, 1.4)) +
-          line('M130 262 Q134 272 142 278 L180 310', '#fff', 2)) +
-        P('M180 306 L166 330 L174 344 L180 322 L186 344 L194 330Z', 'fill="#e8283f" stroke="#a8102a" stroke-width="1.2" stroke-linejoin="round"') +
-        bow(180, 308, 9, '#e8283f');
-    } },
-
-    // ---------------- 하의 ----------------
-    { id: 'bot_denim', slot: 'bottom', name: '청 미니스커트', draw: function (p) {
-      var c = '#4f86d1', st = '#ffd98a';
-      return '<defs>' + G(p + 'a', c) + '</defs>' +
-        P(sym([180, 362], [['L', 146, 362], ['Q', 137, 420, 121, 480], ['Q', 150, 492, 180, 492]]), fillAttr(p + 'a', c)) +
-        P(sym([180, 362], [['L', 146, 362], ['L', 144, 376], ['L', 180, 378]]), 'fill="' + shade(c, -0.12) + '" stroke="' + OUT(c) + '" stroke-width="1.2"') +
-        BOTH(line('M125 472 Q150 484 180 484', st, 1.3, 'stroke-dasharray="4 3"') + line('M150 382 Q156 398 172 394', st, 1.3, 'stroke-dasharray="4 3"') +
-          '<rect x="154" y="360" width="5" height="18" rx="1" fill="' + shade(c, -0.2) + '"/>') +
-        line('M180 378 L180 430 Q178 438 170 440', st, 1.3, 'stroke-dasharray="4 3"') +
-        '<circle cx="180" cy="370" r="4" fill="#ffd23f" stroke="#b58a00"/>' +
-        line('M140 440 L136 470 M220 440 L224 470', shade(c, 0.4), 2, 'opacity=".5"');
-    } },
-    { id: 'bot_plaid', slot: 'bottom', name: '체크 스커트', draw: function (p) {
-      var c = '#e8455a';
-      var pat = '<pattern id="' + p + 'pl" patternUnits="userSpaceOnUse" width="26" height="26"><rect width="26" height="26" fill="' + c + '"/>' +
-        '<rect y="10" width="26" height="6" fill="#a8182f" opacity=".7"/><rect x="10" width="6" height="26" fill="#a8182f" opacity=".7"/>' +
-        '<path d="M0 3 H26 M3 0 V26" stroke="#ffd35c" stroke-width="1.2" opacity=".85"/></pattern>';
-      var d = sym([180, 362], [['L', 146, 362], ['Q', 122, 430, 98, 502], ['Q', 140, 518, 180, 514]]);
-      return '<defs>' + pat + SH(p + 'sh') + '</defs>' +
-        P(d, 'fill="url(#' + p + 'pl)" stroke="#8a1025" stroke-width="1.6" stroke-linejoin="round"') + P(d, 'fill="url(#' + p + 'sh)"') +
-        BOTH(line('M156 372 L126 508 M166 372 L154 514 M150 370 L112 505', '#6a0a1a', 1.3, 'opacity=".4"')) +
-        P(sym([180, 360], [['L', 146, 360], ['L', 145, 372], ['L', 180, 374]]), 'fill="#2d2433" stroke="#000" stroke-width="1"') +
-        '<rect x="172" y="360" width="16" height="14" rx="2" fill="#ffd23f" stroke="#b58a00"/>';
-    } },
-    { id: 'bot_tutu', slot: 'bottom', name: '튤 스커트', draw: function (p) {
-      var c = '#ff9ccb';
-      return P(sym([180, 368], [['L', 148, 368], ['Q', 108, 420, 72, 478], ['Q', 128, 498, 180, 496]]), 'fill="' + shade(c, 0.45) + '" stroke="' + shade(c, -0.2) + '" stroke-width="1.2"') +
-        P(sym([180, 368], [['L', 148, 368], ['Q', 114, 416, 88, 456], ['Q', 134, 470, 180, 468]]), 'fill="' + shade(c, 0.15) + '" opacity=".85" stroke="' + shade(c, -0.2) + '" stroke-width="1.2"') +
-        P(sym([180, 368], [['L', 148, 368], ['Q', 124, 408, 106, 440], ['Q', 140, 452, 180, 450]]), 'fill="' + c + '" opacity=".9" stroke="' + shade(c, -0.25) + '" stroke-width="1.2"') +
-        BOTH(line('M150 380 Q128 420 110 440 M160 380 Q148 420 140 448 M152 390 Q120 440 90 460', '#fff', 1, 'opacity=".6"')) +
-        spark(120, 450, 5) + spark(236, 458, 5) + spark(160, 430, 4) + spark(205, 420, 4) + spark(96, 470, 3.5) +
-        P(sym([180, 360], [['L', 146, 360], ['L', 145, 374], ['L', 180, 376]]), 'fill="#fff" stroke="' + shade(c, -0.25) + '" stroke-width="1.2"') +
-        bow(200, 368, 8, '#ff5fae');
-    } },
-    { id: 'bot_jeans', slot: 'bottom', name: '청바지', draw: function (p) {
-      var c = '#3f6fb8', st = '#ffcf6b';
-      var leg = P('M146 362 L180 362 L181 494 C182 560 178 620 175 660 C176 720 176 780 173 826 L145 826 C140 760 132 700 135 650 C122 600 112 520 121 446 C126 420 138 390 146 362Z', fillAttr(p + 'a', c)) +
-        '<ellipse cx="156" cy="630" rx="12" ry="30" fill="#fff" opacity=".18"/>' +
-        line('M150 382 Q156 398 172 394', st, 1.3, 'stroke-dasharray="4 3"') +
-        line('M170 500 C172 600 166 700 166 820', st, 1.2, 'stroke-dasharray="4 3" opacity=".8"') +
-        P('M145 808 L173 810 L173 826 L145 826Z', 'fill="' + shade(c, 0.35) + '" stroke="' + OUT(c) + '" stroke-width="1.2"') +
-        '<rect x="152" y="360" width="5" height="18" rx="1" fill="' + shade(c, -0.2) + '"/>';
-      return '<defs>' + G(p + 'a', c) + '</defs>' + BOTH(leg) +
-        P(sym([180, 362], [['L', 146, 362], ['L', 144, 376], ['L', 180, 378]]), 'fill="' + shade(c, -0.12) + '" stroke="' + OUT(c) + '" stroke-width="1.2"') +
-        line('M180 378 L180 440 Q178 448 170 450', st, 1.3, 'stroke-dasharray="4 3"') +
-        '<circle cx="180" cy="370" r="4" fill="#ffd23f" stroke="#b58a00"/>';
-    } },
-    { id: 'bot_shorts', slot: 'bottom', name: '반바지', draw: function (p) {
-      var c = '#ffb13d';
-      var leg = P('M146 362 L180 362 L181 500 L182 518 L123 520 Q115 448 146 362Z', fillAttr(p + 'a', c)) +
-        P('M123 506 L182 504 L182 518 L123 520Z', 'fill="#fff" stroke="' + OUT(c) + '" stroke-width="1.2"') +
-        line('M150 382 Q156 398 172 394', OUT(c), 1.2);
-      return '<defs>' + G(p + 'a', c) + '</defs>' + BOTH(leg) +
-        P(sym([180, 360], [['L', 146, 360], ['L', 145, 374], ['L', 180, 376]]), 'fill="#fff" stroke="' + OUT(c) + '" stroke-width="1.2"') +
-        line('M180 376 L180 440', OUT(c), 1.2) + bow(180, 368, 7, '#ff5fae');
-    } },
-    { id: 'bot_long', slot: 'bottom', name: '롱 플리츠 스커트', draw: function (p) {
-      var c = '#86dcc0';
-      return '<defs>' + G(p + 'a', c) + '</defs>' +
-        P(sym([180, 362], [['L', 146, 362], ['Q', 120, 560, 106, 772], ['Q', 142, 786, 180, 784]]), fillAttr(p + 'a', c)) +
-        BOTH(line('M150 376 L124 776 M158 376 L142 780 M166 376 L160 782 M173 376 L172 784', shade(c, -0.3), 1.2, 'opacity=".45"')) +
-        P(sym([180, 360], [['L', 146, 360], ['L', 145, 376], ['L', 180, 378]]), 'fill="' + shade(c, -0.15) + '" stroke="' + OUT(c) + '" stroke-width="1.2"') +
-        flower(200, 368, 6, '#fff');
-    } },
-
-    // ---------------- 드레스 ----------------
-    { id: 'dr_princess', slot: 'dress', name: '공주님 드레스', draw: function (p) {
-      var c = '#ff8cc6', l = shade(c, 0.5), lace = '', roses = '', sp = '';
-      for (var i = 0; i <= 14; i++) {
-        var q = qpt([40, 846], [108, 884], [180, 884], i / 14), q2 = [360 - q[0], q[1]];
-        lace += '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="9" fill="#fff" stroke="' + shade(c, -0.2) + '" stroke-width="1"/>';
-        lace += '<circle cx="' + q2[0].toFixed(1) + '" cy="' + q2[1].toFixed(1) + '" r="9" fill="#fff" stroke="' + shade(c, -0.2) + '" stroke-width="1"/>';
-      }
-      [[90, 632], [130, 648], [180, 652], [230, 648], [270, 632]].forEach(function (r) { roses += rose(r[0], r[1], 8, '#ff5fa2'); });
-      [[110, 720], [150, 560], [210, 600], [250, 760], [140, 800], [200, 780], [170, 700], [120, 520], [240, 520]].forEach(function (s) { sp += spark(s[0], s[1], 6); });
-      return '<defs>' + G(p + 'a', c) + G(p + 'b', shade(c, -0.08)) + '</defs>' + lace +
-        P(sym([180, 368], [['L', 148, 368], ['C', 120, 470, 64, 650, 40, 846], ['Q', 108, 884, 180, 884]]), fillAttr(p + 'a', c)) +
-        BOTH(P('M150 380 C130 470 104 560 86 628 Q134 656 180 656 L180 380Z', 'fill="' + l + '" opacity=".55"')) +
-        BOTH(line('M156 400 C140 520 110 700 92 856 M168 400 C160 560 146 720 140 870', shade(c, -0.3), 1.2, 'opacity=".4"')) +
-        roses + sp +
-        P(sym([180, 298], [['Q', 164, 282, 129, 288], ['Q', 125, 330, 147, 372], ['Q', 164, 386, 180, 388]]), fillAttr(p + 'b', c)) +
-        beads([130, 290], [155, 283], [180, 298], 6, 3, '#fff', shade(c, -0.2)) + beads([230, 290], [205, 283], [180, 298], 6, 3, '#fff', shade(c, -0.2)) +
-        line('M150 300 L160 380 M210 300 L200 380', shade(c, -0.3), 1, 'opacity=".4"') +
-        BOTH(P('M127 262 Q97 260 97 292 Q99 314 118 314 Q133 310 135 292Z', 'fill="' + l + '" stroke="' + shade(c, -0.2) + '" stroke-width="1.4" opacity=".92"') +
-          line('M104 272 Q110 292 114 312 M118 266 Q122 288 126 310', shade(c, -0.15), 1, 'opacity=".6"')) +
-        bow(180, 380, 14, '#ff5fa2');
-    } },
-    { id: 'dr_mermaid', slot: 'dress', name: '인어 드레스', draw: function (p) {
-      var sc = '<pattern id="' + p + 'sc" patternUnits="userSpaceOnUse" width="16" height="12"><path d="M0 12 Q8 0 16 12" stroke="#fff" stroke-width="1.2" fill="none" opacity=".45"/></pattern>';
-      var d = sym([180, 288], [['Q', 160, 280, 130, 288], ['Q', 126, 330, 146, 372], ['Q', 130, 420, 124, 470], ['C', 126, 560, 140, 640, 150, 700],
-        ['C', 132, 770, 100, 830, 82, 874], ['Q', 140, 888, 180, 884]]);
-      return '<defs>' + VG(p + 'g', [[0, '#7fe6ff'], [0.45, '#5a8cff'], [0.75, '#8a6cff'], [1, '#e2a6ff']]) + sc + SH(p + 'sh') + '</defs>' +
-        BOTH(line('M150 290 L170 236', '#5a8cff', 3)) +
-        P(d, 'fill="url(#' + p + 'g)" stroke="#3a3f9f" stroke-width="1.6" stroke-linejoin="round"') + P(d, 'fill="url(#' + p + 'sc)"') + P(d, 'fill="url(#' + p + 'sh)"') +
-        BOTH(line('M150 700 Q140 780 110 870 M162 704 Q158 790 150 880', '#fff', 1.3, 'opacity=".5"')) +
-        beads([132, 290], [156, 282], [180, 290], 6, 2.8, '#fff', '#9ad') + beads([228, 290], [204, 282], [180, 290], 6, 2.8, '#fff', '#9ad') +
-        '<path d="M180 292 L170 304 Q180 314 190 304Z" fill="#ffd0e8" stroke="#d98ab8"/>' +
-        spark(160, 420, 6) + spark(206, 520, 6) + spark(170, 640, 5) + spark(130, 820, 6) + spark(230, 840, 6);
-    } },
-    { id: 'dr_party', slot: 'dress', name: '파티 드레스', draw: function (p) {
-      var c = '#3a2a55', gold = '#ffd23f', seq = '';
-      [[140, 420], [160, 450], [200, 440], [220, 470], [130, 480], [180, 490], [150, 505], [210, 500], [170, 430], [120, 500], [240, 500]].forEach(function (s) {
-        seq += '<circle cx="' + s[0] + '" cy="' + s[1] + '" r="2.3" fill="' + gold + '"/>';
-      });
-      return '<defs>' + G(p + 'a', c) + '</defs>' +
-        P(sym([180, 302], [['L', 164, 238], ['L', 154, 240], ['Q', 128, 288, 135, 330], ['Q', 141, 356, 148, 372], ['Q', 122, 440, 102, 530], ['Q', 140, 544, 180, 542]]), fillAttr(p + 'a', c)) +
-        seq +
-        P(sym([180, 366], [['L', 148, 366], ['L', 147, 380], ['L', 180, 382]]), 'fill="' + gold + '" stroke="#b58a00" stroke-width="1.2"') +
-        '<path d="M180 364 L172 373 L180 382 L188 373Z" fill="#ff4f7f" stroke="#fff"/>' +
-        line('M164 238 L180 302 L196 238', gold, 2) +
-        BOTH(line('M104 526 Q140 540 180 538', gold, 3)) +
-        spark(150, 330, 5, gold) + spark(212, 320, 4, gold);
-    } },
-    { id: 'dr_hanbok', slot: 'dress', name: '한복', draw: function (p) {
-      var chima = '#ff5d8f', jeo = '#ffe066', go = '#e0284f';
-      var stripes = ['#ff5d5d', '#ffb13d', '#ffe066', '#5fd07a', '#4f9cff', '#b07cff'], sl = '';
-      stripes.forEach(function (col, i) {
-        var y0 = 404 + i * 13;
-        sl += '<path d="M' + (92 - i * 0.2) + ' ' + y0 + ' L123 ' + (y0 - 2) + ' L122 ' + (y0 + 11) + ' L' + (91 - i * 0.2) + ' ' + (y0 + 13) + 'Z" fill="' + col + '"/>';
-      });
-      return '<defs>' + G(p + 'c', chima) + G(p + 'j', jeo) + '</defs>' +
-        P(sym([180, 316], [['L', 140, 316], ['C', 120, 460, 76, 680, 58, 864], ['Q', 120, 888, 180, 888]]), fillAttr(p + 'c', chima)) +
-        BOTH(line('M150 330 C136 500 110 700 100 876 M166 330 C160 520 152 720 150 886', shade(chima, -0.3), 1.2, 'opacity=".4"') +
-          line('M64 830 Q120 856 180 858', '#ffd23f', 5, 'opacity=".9"') + flower(110, 842, 4, '#ffd23f', '#fff') + flower(150, 852, 4, '#ffd23f', '#fff')) +
-        BOTH(P('M127 249 Q99 255 98 300 L91 400 Q86 452 89 494 L118 497 Q121 452 124 402 L132 318 Q134 288 135 268Z', fillAttr(p + 'j', jeo)) + sl +
-          P('M89 482 L118 485 L118 497 L89 494Z', 'fill="#fff" stroke="' + OUT(jeo) + '" stroke-width="1"')) +
-        P(sym([180, 300], [['L', 166, 238], ['Q', 146, 246, 126, 252], ['Q', 120, 284, 128, 322], ['Q', 150, 332, 180, 330]]), fillAttr(p + 'j', jeo)) +
-        line('M163 238 L196 300', '#7a3fb0', 6) + line('M197 238 L184 262', '#7a3fb0', 6) +
-        line('M164 239 L176 262', '#fff', 2.5) + line('M196 239 L188 254', '#fff', 2.5) +
-        P('M188 300 Q182 340 176 390 L184 392 Q190 346 195 302Z', 'fill="' + go + '"') +
-        P('M191 300 Q199 336 202 376 L209 374 Q206 332 197 300Z', 'fill="' + go + '"') +
-        '<circle cx="192" cy="301" r="6" fill="' + go + '"/>';
-    } },
-    { id: 'dr_sun', slot: 'dress', name: '꽃무늬 원피스', draw: function (p) {
-      var c = '#ffe066';
-      var pat = '<pattern id="' + p + 'fl" patternUnits="userSpaceOnUse" width="34" height="34"><rect width="34" height="34" fill="' + c + '"/>' +
-        flower(9, 9, 3.5, '#fff', '#ff8a3d') + flower(26, 26, 3.5, '#ffb3d1', '#fff') + '</pattern>';
-      var d = sym([180, 292], [['Q', 160, 284, 131, 290], ['Q', 125, 330, 146, 372], ['Q', 118, 460, 98, 566], ['Q', 140, 582, 180, 580]]);
-      return '<defs>' + pat + SH(p + 'sh') + '</defs>' +
-        BOTH(line('M146 292 L156 242', '#ff9f3d', 4)) +
-        frill(98, 262, 566, 12, 7, '#fff', '#e0b000') +
-        P(d, 'fill="url(#' + p + 'fl)" stroke="#c09000" stroke-width="1.6" stroke-linejoin="round"') + P(d, 'fill="url(#' + p + 'sh)"') +
-        P(sym([180, 366], [['L', 148, 366], ['L', 147, 378], ['L', 180, 380]]), 'fill="#fff" stroke="#e0b000" stroke-width="1.2"') +
-        bow(180, 372, 11, '#ff9f3d');
-    } },
-    { id: 'dr_snow', slot: 'dress', name: '눈꽃 드레스', back: function (p) {
-      return '<defs>' + VG(p + 'cp', [[0, '#e8f8ff', 0.9], [1, '#9fd8ff', 0.7]]) + '</defs>' +
-        P(sym([180, 240], [['L', 150, 244], ['Q', 104, 250, 92, 290], ['C', 70, 480, 58, 680, 36, 884], ['Q', 110, 900, 180, 896]]),
-          'fill="url(#' + p + 'cp)" stroke="#8fc8ee" stroke-width="1.4"') +
-        snowflake(70, 700, 9, '#fff') + snowflake(290, 740, 9, '#fff') + snowflake(80, 820, 7, '#fff') + snowflake(284, 600, 7, '#fff');
-    }, draw: function (p) {
-      var c = '#a9ddff';
-      return '<defs>' + VG(p + 'g', [[0, '#d8f2ff'], [0.5, c], [1, '#e9f7ff']]) + G(p + 'b', '#8fcfff') + '</defs>' +
-        P(sym([180, 370], [['L', 148, 370], ['C', 128, 480, 90, 680, 70, 868], ['Q', 120, 888, 180, 888]]), 'fill="url(#' + p + 'g)" stroke="#5aa5d8" stroke-width="1.6" stroke-linejoin="round"') +
-        BOTH(line('M156 390 C140 560 110 720 96 880 M168 390 C160 560 150 740 148 886', '#5aa5d8', 1.2, 'opacity=".4"')) +
-        snowflake(130, 600, 10, '#fff') + snowflake(220, 680, 12, '#fff') + snowflake(160, 800, 9, '#fff') + snowflake(250, 820, 8, '#fff') + snowflake(110, 760, 8, '#fff') +
-        spark(190, 520, 6) + spark(150, 460, 5) +
-        P(sym([180, 294], [['Q', 160, 282, 129, 288], ['Q', 125, 330, 147, 372], ['Q', 164, 386, 180, 388]]), fillAttr(p + 'b', '#8fcfff')) +
-        beads([132, 290], [156, 282], [180, 294], 6, 2.8, '#fff', '#8fc8ee') + beads([228, 290], [204, 282], [180, 294], 6, 2.8, '#fff', '#8fc8ee') +
-        snowflake(180, 330, 10, '#fff') +
-        BOTH(P(SLEEVE_LONG, 'fill="#e8f8ff" opacity=".5" stroke="#9fd0f0" stroke-width="1.2"'));
-    } },
-
-    // ---------------- 겉옷 ----------------
-    { id: 'out_cardigan', slot: 'outer', name: '가디건', draw: function (p) {
-      var c = '#ff9fc9';
-      return '<defs>' + G(p + 'a', c) + '</defs>' +
-        BOTH(P(SLEEVE_LONG, fillAttr(p + 'a', c)) + P('M90 484 L115 486 L115 499 L90 497Z', 'fill="' + shade(c, -0.15) + '" stroke="' + OUT(c) + '" stroke-width="1.2"') +
-          P('M166 238 Q146 246 124 252 Q118 284 126 318 Q132 360 132 404 L160 406 Q162 330 168 250Z', fillAttr(p + 'a', c)) +
-          P('M132 394 L160 396 L160 406 L132 404Z', 'fill="' + shade(c, -0.15) + '" stroke="' + OUT(c) + '" stroke-width="1.2"') +
-          line('M166 240 Q162 320 160 404', shade(c, -0.15), 5) +
-          '<rect x="138" y="352" width="16" height="16" rx="3" fill="none" stroke="' + OUT(c) + '" stroke-width="1.2"/>') +
-        '<g fill="#fff" stroke="' + OUT(c) + '"><circle cx="166" cy="280" r="3"/><circle cx="165" cy="312" r="3"/><circle cx="163" cy="344" r="3"/><circle cx="162" cy="376" r="3"/></g>';
-    } },
-    { id: 'out_denim', slot: 'outer', name: '청재킷', draw: function (p) {
-      var c = '#5b8fd6', st = '#ffd98a';
-      return '<defs>' + G(p + 'a', c) + '</defs>' +
-        BOTH(P('M127 249 Q99 255 98 300 L94 420 L119 423 L132 318 Q134 288 135 268Z', fillAttr(p + 'a', c)) +
-          P('M93 410 L120 413 L119 428 L93 425Z', 'fill="' + shade(c, 0.2) + '" stroke="' + OUT(c) + '" stroke-width="1.2"') +
-          P('M166 238 Q146 246 124 252 Q118 284 126 318 Q132 340 134 358 L168 360 Q166 300 170 250Z', fillAttr(p + 'a', c)) +
-          P('M166 238 Q150 250 146 262 L158 286 L170 252Z', 'fill="' + shade(c, -0.15) + '" stroke="' + OUT(c) + '" stroke-width="1.2"') +
-          '<rect x="138" y="292" width="20" height="18" rx="2" fill="none" stroke="' + st + '" stroke-width="1.2" stroke-dasharray="3 2"/>' +
-          P('M137 290 L159 290 L158 300 L148 304 L137 300Z', 'fill="' + shade(c, -0.1) + '" stroke="' + OUT(c) + '" stroke-width="1"') +
-          line('M134 346 L168 348', st, 1.2, 'stroke-dasharray="3 2"') + line('M166 252 L166 356', st, 1.2, 'stroke-dasharray="3 2"')) +
-        '<g fill="#ffd23f" stroke="#b58a00"><circle cx="168" cy="300" r="2.5"/><circle cx="168" cy="330" r="2.5"/></g>';
-    } },
-    { id: 'out_cape', slot: 'outer', name: '공주 망토', back: function (p) {
-      var c = '#c8243f';
-      return '<defs>' + G(p + 'cb', shade(c, -0.15)) + '</defs>' +
-        P(sym([180, 236], [['L', 150, 240], ['Q', 100, 250, 86, 300], ['C', 70, 500, 60, 700, 54, 866], ['Q', 120, 884, 180, 880]]), fillAttr(p + 'cb', c)) +
-        BOTH(line('M58 858 Q120 876 180 872', '#ffd23f', 4));
-    }, draw: function (p) {
-      var c = '#d9304f', fur = '';
-      for (var i = 0; i <= 8; i++) {
-        var q = qpt([124, 256], [150, 244], [178, 244], i / 8);
-        fur += '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="7" fill="#fff" stroke="#ddd" stroke-width=".8"/>';
-        fur += '<circle cx="' + (360 - q[0]).toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="7" fill="#fff" stroke="#ddd" stroke-width=".8"/>';
-      }
-      return '<defs>' + G(p + 'a', c) + '</defs>' +
-        BOTH(P('M172 238 Q134 244 112 262 Q92 290 92 334 Q112 326 124 310 Q148 276 176 254Z', fillAttr(p + 'a', c)) +
-          line('M94 330 Q110 322 122 308', '#ffd23f', 3)) +
-        fur + '<circle cx="180" cy="258" r="9" fill="#ffd23f" stroke="#b58a00" stroke-width="1.5"/>' +
-        '<path d="' + starPath(180, 258, 6, 2.5) + '" fill="#ff4f7f"/>';
-    } },
-
-    // ---------------- 양말 ----------------
-    { id: 'sock_knee', slot: 'socks', name: '레이스 양말', draw: function (p) {
-      var sock = P('M135 612 L176 612 C177 700 170 780 168 840 Q159 846 150 840 C142 770 133 700 135 612Z', 'fill="#fff" stroke="#c9bcd0" stroke-width="1.3"') +
-        frill(132, 179, 614, 5, 5, '#ffd1e6', '#e79bc0') + bow(142, 618, 5, '#ff6fae');
-      return BOTH(sock);
-    } },
-    { id: 'sock_tights', slot: 'socks', name: '줄무늬 타이즈', draw: function (p) {
-      var pat = '<pattern id="' + p + 'tt" patternUnits="userSpaceOnUse" width="20" height="16"><rect width="20" height="16" fill="#b58cff"/><rect y="8" width="20" height="8" fill="#fff"/></pattern>';
-      var leg = 'M124 470 C114 530 128 600 138 645 C134 700 140 760 148 840 Q159 846 170 840 C170 780 178 720 174 645 C180 600 184 540 183 494 L180 470Z';
-      return '<defs>' + pat + SH(p + 'sh') + '</defs>' +
-        BOTH(P(leg, 'fill="url(#' + p + 'tt)" stroke="#7a52c7" stroke-width="1.3"') + P(leg, 'fill="url(#' + p + 'sh)"'));
-    } },
-
-    // ---------------- 신발 ----------------
-    { id: 'sh_red', slot: 'shoes', name: '빨간 구두', draw: function (p) {
-      var c = '#e8283f';
-      return '<defs>' + G(p + 'a', c) + '</defs>' +
-        BOTH(P('M147 866 L143 884 L149 884 L152 870Z', 'fill="#7a0a1a"') +
-          P('M146 846 Q143 866 149 876 Q160 884 172 875 Q175 858 171 842 Q160 852 146 846Z', fillAttr(p + 'a', c)) +
-          '<ellipse cx="154" cy="866" rx="3" ry="6" fill="#fff" opacity=".6"/>' + bow(159, 850, 4, '#ffd1dc'));
-    } },
-    { id: 'sh_glass', slot: 'shoes', name: '유리구두', draw: function (p) {
-      return BOTH(P('M147 866 L143 884 L149 884 L152 870Z', 'fill="#bfeaff" stroke="#7fc8f0"') +
-        P('M146 846 Q143 866 149 876 Q160 884 172 875 Q175 858 171 842 Q160 852 146 846Z', 'fill="#e3f7ff" fill-opacity=".75" stroke="#6fbfee" stroke-width="1.6"') +
-        spark(165, 858, 5) + spark(152, 870, 3));
-    } },
-    { id: 'sh_boots', slot: 'shoes', name: '롱부츠', draw: function (p) {
-      var c = '#9a5a34';
-      return '<defs>' + G(p + 'a', c) + '</defs>' +
-        BOTH(P('M137 650 L175 650 C176 720 172 790 172 842 Q175 862 171 876 Q159 886 148 876 Q142 860 146 842 C140 780 135 720 137 650Z', fillAttr(p + 'a', c)) +
-          P('M133 640 L179 640 L177 664 L135 664Z', 'fill="' + shade(c, 0.25) + '" stroke="' + OUT(c) + '" stroke-width="1.3"') +
-          P('M142 800 L172 800 L172 810 L142 810Z', 'fill="' + shade(c, -0.25) + '"') + '<rect x="154" y="799" width="8" height="12" fill="none" stroke="#ffd23f" stroke-width="2"/>' +
-          line('M158 670 L158 790', shade(c, 0.3), 1.2, 'stroke-dasharray="4 3"'));
-    } },
-    { id: 'sh_sneakers', slot: 'shoes', name: '운동화', draw: function (p) {
-      var c = '#ffffff';
-      return '<defs>' + G(p + 'a', c) + '</defs>' +
-        BOTH(P('M145 836 Q139 868 148 878 Q161 886 175 878 Q179 862 173 834Z', fillAttr(p + 'a', '#d9d0e6')) +
-          P('M142 868 Q160 876 177 868 L176 879 Q160 889 144 880Z', 'fill="#ff6fae" stroke="#c2188a" stroke-width="1.2"') +
-          line('M150 846 L168 842 M150 854 L169 850 M150 862 L170 858', '#ff6fae', 2) +
-          P(starPath(160, 870, 4, 1.6), 'fill="#fff"'));
-    } },
-    { id: 'sh_sandal', slot: 'shoes', name: '리본 샌들', draw: function (p) {
-      var c = '#ffc94d';
-      return BOTH(P('M146 866 Q160 876 172 866 L172 876 Q160 884 146 876Z', 'fill="#ff8fc8" stroke="#c2188a" stroke-width="1.2"') +
-        line('M149 852 L170 842 M149 842 L170 856 M151 824 L168 814 M151 814 L168 826 M151 804 L168 800', c, 3) +
-        bow(159, 800, 5, '#ff6fae'));
-    } },
-    { id: 'sh_mary', slot: 'shoes', name: '메리제인', draw: function (p) {
-      var c = '#2d2433';
-      return '<defs>' + G(p + 'a', c) + '</defs>' +
-        BOTH(P('M146 846 Q143 866 149 876 Q160 884 172 875 Q175 858 171 842 Q160 852 146 846Z', fillAttr(p + 'a', c)) +
-          line('M147 840 L171 834', c, 3.5) + '<circle cx="167" cy="835" r="2.5" fill="#ffd23f"/>' +
-          '<ellipse cx="154" cy="866" rx="3" ry="6" fill="#fff" opacity=".4"/>');
-    } },
-
-    // ---------------- 가방 (오른손) ----------------
-    { id: 'bag_red', slot: 'bag', name: '핸드백', draw: function (p) {
-      var c = '#e8283f';
-      return '<defs>' + G(p + 'a', c) + '</defs>' +
-        line('M238 552 Q258 496 278 552', shade(c, -0.35), 4) +
-        P('M230 550 Q226 600 236 614 L280 614 Q290 600 286 550Z', fillAttr(p + 'a', c)) +
-        P('M230 550 L286 550 L284 574 Q258 588 232 574Z', 'fill="' + shade(c, -0.18) + '" stroke="' + OUT(c) + '" stroke-width="1.4"') +
-        '<circle cx="258" cy="580" r="5" fill="#ffd23f" stroke="#b58a00"/>' + '<ellipse cx="242" cy="598" rx="3" ry="8" fill="#fff" opacity=".4"/>';
-    } },
-    { id: 'bag_heart', slot: 'bag', name: '하트 가방', draw: function (p) {
-      return line('M256 520 L240 574 M260 520 L276 574', '#ffd23f', 2, 'stroke-dasharray="3 2"') +
-        '<defs>' + G(p + 'a', '#ff8fc8') + '</defs>' +
-        '<path d="M258 632 C220 606 224 568 244 568 C252 568 256 574 258 580 C260 574 264 568 272 568 C292 568 296 606 258 632Z" ' + fillAttr(p + 'a', '#ff8fc8') + '/>' +
-        spark(248, 584, 5) + heart(258, 600, 7, '#fff');
-    } },
-    { id: 'bag_basket', slot: 'bag', name: '꽃바구니', draw: function (p) {
-      var c = '#d9a45b';
-      return line('M236 566 Q258 500 280 566', shade(c, -0.3), 4) +
-        flower(242, 560, 6, '#ff8fc7') + flower(258, 552, 6, '#fff') + flower(274, 560, 6, '#b5a1ff') +
-        '<defs>' + G(p + 'a', c) + '</defs>' +
-        P('M230 566 L286 566 L278 614 Q258 622 238 614Z', fillAttr(p + 'a', c)) +
-        line('M234 580 L282 580 M236 594 L280 594 M238 606 L278 606 M246 568 L248 616 M258 568 L258 618 M270 568 L268 616', shade(c, -0.3), 1, 'opacity=".6"');
-    } },
-
-    // ---------------- 손에 드는 것 (왼손) ----------------
-    { id: 'hand_wand', slot: 'hand', name: '요술봉', draw: function (p) {
-      return line('M100 530 L64 408', '#b98cff', 5) + line('M100 530 L64 408', '#fff', 1.5, 'opacity=".6"') +
-        line('M66 414 Q48 424 52 446 M68 416 Q60 440 70 456', '#ff8fc8', 2.5) +
-        P(starPath(60, 394, 22, 10), 'fill="#ffe066" stroke="#e0a000" stroke-width="2" stroke-linejoin="round"') +
-        P(starPath(60, 396, 10, 4.5), 'fill="#fff8c0"') +
-        spark(28, 370, 7) + spark(92, 366, 5) + spark(36, 420, 4);
-    } },
-    { id: 'hand_bouquet', slot: 'hand', name: '꽃다발', draw: function (p) {
-      return '<ellipse cx="78" cy="470" rx="12" ry="5" fill="#5fc46a" transform="rotate(-30 78 470)"/><ellipse cx="122" cy="470" rx="12" ry="5" fill="#5fc46a" transform="rotate(30 122 470)"/>' +
-        rose(86, 458, 10, '#ff5fa2') + rose(108, 452, 10, '#ff8fc7') + flower(96, 440, 7, '#fff') + rose(118, 470, 9, '#ff5fa2') + flower(80, 476, 6, '#b5a1ff') +
-        '<defs>' + G(p + 'a', '#fff3d1') + '</defs>' +
-        P('M100 544 L76 478 L124 476Z', fillAttr(p + 'a', '#e6c46a')) + bow(100, 510, 8, '#ff5fae');
-    } },
-    { id: 'hand_balloon', slot: 'hand', name: '하트 풍선', draw: function (p) {
-      return line('M102 522 Q86 420 70 268', '#fff', 1.5) +
-        '<defs>' + G(p + 'a', '#ff4f7f') + '</defs>' +
-        '<path d="M70 270 C20 238 24 186 50 186 C60 186 68 194 70 202 C72 194 80 186 90 186 C116 186 120 238 70 270Z" ' + fillAttr(p + 'a', '#ff4f7f') + '/>' +
-        '<ellipse cx="50" cy="206" rx="6" ry="10" fill="#fff" opacity=".5" transform="rotate(-20 50 206)"/>' +
-        '<path d="M66 270 L74 270 L70 278Z" fill="#c21f5b"/>';
-    } },
-
-    // ---------------- 머리 장식 ----------------
-    { id: 'hd_tiara', slot: 'head', name: '티아라', draw: function (p) {
-      var g = '#ffd447', gd = '#c98f00';
-      return '<defs>' + G(p + 'a', g) + '</defs>' +
-        P('M130 78 Q180 56 230 78 L226 70 L214 66 L208 44 L200 62 L190 36 L180 18 L170 36 L160 62 L152 44 L146 66 L134 70Z', fillAttr(p + 'a', g, 1.5)) +
-        '<path d="' + starPath(180, 44, 9, 4) + '" fill="#fff"/>' +
-        '<circle cx="180" cy="62" r="6" fill="#ff4f9a" stroke="#fff" stroke-width="1.5"/>' +
-        '<circle cx="152" cy="64" r="3.5" fill="#6fd0ff" stroke="#fff"/><circle cx="208" cy="64" r="3.5" fill="#6fd0ff" stroke="#fff"/>' +
-        spark(214, 30, 6) + line('M136 72 Q180 56 224 72', gd, 1, 'opacity=".5"');
-    } },
-    { id: 'hd_crown', slot: 'head', name: '왕관', draw: function (p) {
-      var g = '#ffd447';
-      return '<defs>' + G(p + 'a', g) + '</defs>' +
-        P('M136 62 L128 12 L156 38 L180 0 L204 38 L232 12 L224 62 Q180 50 136 62Z', fillAttr(p + 'a', g, 2)) +
-        P('M134 62 Q180 50 226 62 L226 76 Q180 64 134 76Z', 'fill="#f0b400" stroke="#c98f00" stroke-width="1.5"') +
-        '<g fill="#fff" stroke="#c98f00"><circle cx="128" cy="10" r="5"/><circle cx="180" cy="-2" r="6"/><circle cx="232" cy="10" r="5"/></g>' +
-        '<path d="M180 22 L170 36 L180 50 L190 36Z" fill="#ff2f6f" stroke="#fff" stroke-width="1.5"/>' +
-        '<circle cx="150" cy="48" r="5" fill="#4f9cff" stroke="#fff"/><circle cx="210" cy="48" r="5" fill="#4f9cff" stroke="#fff"/>' +
-        beads([140, 70], [180, 58], [220, 70], 8, 2.4, '#fff', '#ddd');
-    } },
-    { id: 'hd_bow', slot: 'head', name: '큰 리본', draw: function (p) {
-      return bow(218, 58, 22, '#ff4f9a') + '<g fill="#fff" opacity=".8"><circle cx="196" cy="50" r="3"/><circle cx="204" cy="66" r="3"/><circle cx="236" cy="48" r="3"/><circle cx="242" cy="64" r="3"/></g>';
-    } },
-    { id: 'hd_flower', slot: 'head', name: '꽃관', draw: function (p) {
-      var cols = ['#ff8fc7', '#fff', '#b5a1ff', '#ff5fa2', '#fff27a', '#b5a1ff', '#fff', '#ff8fc7'], out = '', leaves = '';
-      for (var i = 0; i < 8; i++) {
-        var a = Math.PI * (1.12 + i * 0.76 / 7), x = 180 + Math.cos(a) * 64, y = 128 + Math.sin(a) * 76;
-        leaves += '<ellipse cx="' + (x + 7).toFixed(1) + '" cy="' + (y + 4).toFixed(1) + '" rx="8" ry="3.5" fill="#5fc46a" transform="rotate(' + (i * 20 - 70) + ' ' + (x + 7).toFixed(1) + ' ' + (y + 4).toFixed(1) + ')"/>';
-        out += (i % 2 ? rose(+x.toFixed(1), +y.toFixed(1), 8, cols[i]) : flower(+x.toFixed(1), +y.toFixed(1), 6, cols[i]));
-      }
-      return leaves + out;
-    } },
-    { id: 'hd_hat', slot: 'head', name: '밀짚모자', draw: function (p) {
-      var c = '#f2d38a';
-      return '<defs>' + G(p + 'a', c) + '</defs>' +
-        '<ellipse cx="180" cy="60" rx="100" ry="24" ' + fillAttr(p + 'a', c) + '/>' +
-        P('M128 60 Q128 6 180 4 Q232 6 232 60 Q180 70 128 60Z', fillAttr(p + 'a', c)) +
-        P('M129 44 Q180 34 231 44 L232 58 Q180 68 128 58Z', 'fill="#ff6fae" stroke="#c2188a" stroke-width="1.2"') +
-        flower(214, 50, 7, '#fff') + flower(200, 56, 5, '#ffd1e6') +
-        line('M100 64 Q180 80 260 64', shade(c, -0.3), 1, 'opacity=".5"');
-    } },
-
-    // ---------------- 목걸이 ----------------
-    { id: 'nk_pearl', slot: 'necklace', name: '진주 목걸이', draw: function () {
-      return beads([165, 236], [180, 290], [195, 236], 14, 3.3, '#fff', '#cfc5d8') + '<circle cx="180" cy="266" r="5" fill="#fff" stroke="#cfc5d8"/>';
-    } },
-    { id: 'nk_heart', slot: 'necklace', name: '하트 목걸이', draw: function () {
-      return line('M165 236 Q180 290 195 236', '#e6b422', 1.4) + heart(180, 270, 11, '#ff3d7f', '#c21f5b', 1.4) + '<circle cx="175" cy="266" r="2" fill="#fff"/>';
-    } },
-    { id: 'nk_star', slot: 'necklace', name: '별 초커', draw: function () {
-      return P('M166 220 Q180 226 194 220 L194 229 Q180 235 166 229Z', 'fill="#6a2a8e" stroke="#40145a" stroke-width="1"') +
-        P(starPath(180, 242, 10, 4.5), 'fill="#ffd447" stroke="#c98f00" stroke-width="1.2"');
-    } },
-
-    // ---------------- 안경 ----------------
-    { id: 'gl_round', slot: 'glasses', name: '동그란 안경', draw: function () {
-      return '<g fill="rgba(255,255,255,.18)" stroke="#c9942f" stroke-width="2.6"><circle cx="155" cy="150" r="20"/><circle cx="205" cy="150" r="20"/></g>' +
-        line('M175 146 Q180 140 185 146 M135 146 L126 142 M225 146 L234 142', '#c9942f', 2.6) +
-        line('M144 138 L150 134', '#fff', 2);
-    } },
-    { id: 'gl_heart', slot: 'glasses', name: '하트 선글라스', draw: function () {
-      return heart(155, 150, 20, 'rgba(255,80,150,.6)', '#d61f6f', 2.6) + heart(205, 150, 20, 'rgba(255,80,150,.6)', '#d61f6f', 2.6) +
-        line('M173 144 Q180 138 187 144 M131 142 L124 138 M229 142 L236 138', '#d61f6f', 2.6) +
-        line('M144 140 L150 136 M194 140 L200 136', '#fff', 2.2);
-    } }
-  ];
-  // AI 그림 옷 (assets/princess/clothes 폴더)
-  //  - 로즈 공주님 그림에 옷만 입혀서 AI로 그린 뒤, 옷 부분만 오려 낸 그림이에요
-  //  - 로즈 그림과 같은 자리에 있어서 로즈의 맞춤값으로 그리면 어느 공주님에게나 맞아요
-  //  - AI 그림체일 때는 상의·하의·드레스·신발 칸에 AI 옷이 나와요
-  var AI_CLOTHES = [
+    // 상의
     { id: 'ai_top_blouse', slot: 'top', name: '리본 블라우스' },
     { id: 'ai_top_sailor', slot: 'top', name: '세일러 티셔츠' },
     { id: 'ai_top_sweater', slot: 'top', name: '하트 스웨터' },
+    { id: 'ai_top_hoodie', slot: 'top', name: '별 후드티' },
+    { id: 'ai_top_tank', slot: 'top', name: '프릴 민소매' },
+    { id: 'ai_top_check', slot: 'top', name: '체크 셔츠' },
+    { id: 'ai_top_rainbow', slot: 'top', name: '무지개 티셔츠' },
+    // 겉옷
+    { id: 'ai_outer_cardigan', slot: 'outer', name: '분홍 가디건' },
+    { id: 'ai_outer_denim', slot: 'outer', name: '청재킷' },
+    { id: 'ai_outer_cape', slot: 'outer', name: '공주 망토' },
+    // 하의
     { id: 'ai_skirt_denim', slot: 'bottom', name: '청치마' },
     { id: 'ai_skirt_tutu', slot: 'bottom', name: '발레 튀튀' },
+    { id: 'ai_skirt_pleats', slot: 'bottom', name: '주름치마' },
+    { id: 'ai_skirt_yellow', slot: 'bottom', name: '노랑 치마' },
+    { id: 'ai_skirt_long', slot: 'bottom', name: '꽃무늬 롱스커트' },
     { id: 'ai_pants_jeans', slot: 'bottom', name: '청바지' },
+    { id: 'ai_pants_leggings', slot: 'bottom', name: '별 레깅스' },
+    // 드레스
     { id: 'ai_dress_rose', slot: 'dress', name: '장미 드레스' },
     { id: 'ai_dress_blue', slot: 'dress', name: '하늘빛 드레스' },
     { id: 'ai_dress_red', slot: 'dress', name: '왕실 드레스' },
+    { id: 'ai_dress_snow', slot: 'dress', name: '눈꽃 드레스' },
+    { id: 'ai_dress_mermaid', slot: 'dress', name: '인어 드레스' },
+    { id: 'ai_dress_hanbok', slot: 'dress', name: '한복' },
     { id: 'ai_dress_fairy', slot: 'dress', name: '요정 드레스' },
+    { id: 'ai_dress_rainbow', slot: 'dress', name: '무지개 드레스' },
     { id: 'ai_dress_daisy', slot: 'dress', name: '데이지 원피스' },
+    // 신발
     { id: 'ai_shoes_flats', slot: 'shoes', name: '반짝 구두' },
+    { id: 'ai_shoes_glass', slot: 'shoes', name: '유리구두' },
+    { id: 'ai_shoes_sneakers', slot: 'shoes', name: '운동화' },
+    { id: 'ai_shoes_sandals', slot: 'shoes', name: '황금 샌들' },
+    { id: 'ai_shoes_mary', slot: 'shoes', name: '메리제인' },
     { id: 'ai_shoes_boots', slot: 'shoes', name: '빨간 장화' },
-    { id: 'ai_head_tiara', slot: 'head', name: '보석 티아라' }
+    // 머리 장식·귀걸이
+    { id: 'ai_head_tiara', slot: 'head', name: '보석 티아라' },
+    { id: 'ai_head_crown', slot: 'head', name: '황금 왕관' },
+    { id: 'ai_head_flowers', slot: 'head', name: '꽃관' },
+    { id: 'ai_head_bow', slot: 'head', name: '큰 리본' },
+    { id: 'ai_head_hat', slot: 'head', name: '밀짚모자' },
+    { id: 'ai_ear_star', slot: 'ear', name: '별 머리핀·귀걸이' },
+    // 목걸이·안경·가방·손에 드는 것
+    { id: 'ai_neck_pearl', slot: 'necklace', name: '진주 목걸이' },
+    { id: 'ai_neck_heart', slot: 'necklace', name: '하트 목걸이' },
+    { id: 'ai_glasses_heart', slot: 'glasses', name: '하트 선글라스' },
+    { id: 'ai_bag_pink', slot: 'bag', name: '분홍 핸드백' },
+    { id: 'ai_bag_basket', slot: 'bag', name: '꽃바구니' },
+    { id: 'ai_hand_wand', slot: 'hand', name: '요술봉' }
   ];
-  var AI_REPLACES = ['top', 'bottom', 'dress', 'shoes']; // AI 옷이 있으면 직접 그린 옷 대신 보여 줄 칸
-  AI_CLOTHES.forEach(function (c) {
-    c.ai = true;
+  ITEMS.forEach(function (c) {
     c.draw = function (p, forExport) {
       if (!c.img) return '';
       // 그림은 투명한 곳까지 네모라서, 잡기는 옷이 있는 곳의 네모로만 해요
@@ -1323,38 +370,29 @@
       return '<g pointer-events="none">' + aiBodyMarkup(AI.bodies.rose, p, forExport, c.img) + '</g>' +
         '<rect x="' + bx.x.toFixed(1) + '" y="' + bx.y.toFixed(1) + '" width="' + bx.w.toFixed(1) + '" height="' + bx.h.toFixed(1) + '" fill="#000" fill-opacity="0"/>';
     };
-    ITEMS.push(c);
   });
   var ITEM_BY_ID = {};
   ITEMS.forEach(function (it) { ITEM_BY_ID[it.id] = it; });
 
   // 옷 입는 순서 (아래 → 위)
-  var LAYERS_UNDER = ['socks', 'shoes', 'bottom', 'top', 'dress', 'outer', 'necklace', 'glasses'];
-  var LAYERS_OVER = ['head', 'bag', 'hand'];
-  var SLOTS = LAYERS_UNDER.concat(LAYERS_OVER);
+  var LAYERS = ['socks', 'shoes', 'bottom', 'top', 'dress', 'outer', 'necklace', 'ear', 'glasses', 'head', 'bag', 'hand'];
 
   // 옷장 칸
   var PAGES = [
     { id: 'clothes', label: '👚 상의', slots: ['top', 'outer'] },
-    { id: 'bottoms', label: '👖 하의', slots: ['bottom', 'socks'] },
+    { id: 'bottoms', label: '👖 하의', slots: ['bottom'] },
     { id: 'dress', label: '👗 드레스', slots: ['dress'] },
-    { id: 'shoes', label: '👠 신발·가방', slots: ['shoes', 'bag', 'hand'], max: 1.1 },
-    { id: 'acc', label: '👑 액세서리', slots: ['head', 'necklace', 'glasses'], max: 1.3 },
-    { id: 'hair', label: '💇‍♀️ 머리', slots: [] }
+    { id: 'shoes', label: '👠 신발', slots: ['shoes'], max: 2 },
+    { id: 'head', label: '👑 머리장식', slots: ['head', 'ear'], max: 1.6 },
+    { id: 'acc', label: '💎 소품', slots: ['necklace', 'glasses', 'bag', 'hand'], max: 2 },
+    { id: 'princess', label: '👸 공주님', slots: [] }
   ];
 
   // =====================================================================
-  //  공주님 전체 그리기
-  // =====================================================================
-  function itemMarkup(it, p) {
-    return (it.back ? it.back(p + 'k') : '') + it.draw(p);
-  }
-  // =====================================================================
   //  AI 그림 공주님 (GitHub 저장소 assets/princess/body 폴더의 전신 그림)
-  //  - 공주님마다 한 장: rose / sunny / luna / coco / amber / peach (.png, 없으면 .jpg)
+  //  - 공주님마다 한 장: rose / sunny / luna / coco / amber / peach (.png)
   //  - 모두 같은 분홍 튜브탑·반바지를 입고 있어서, 그 분홍색을 찾아
-  //    옷이 맞춰진 몸(튜브탑 위 284, 반바지 위 430, 발끝 880)에 자동으로 맞춰요
-  //  - 파일을 못 찾으면 직접 그린 공주님으로 그대로 놀 수 있어요
+  //    옷이 맞춰진 자리(튜브탑 위 284, 반바지 위 430, 발끝 880)에 자동으로 맞춰요
   // =====================================================================
   var AI_PRINCESSES = [
     { id: 'rose', name: '로즈' }, { id: 'sunny', name: '써니' }, { id: 'luna', name: '루나' },
@@ -1519,20 +557,12 @@
         c.img = { url: img.src, data: cv.toDataURL('image/png') };
       }).catch(function () {});
     };
-    return Promise.all(AI_CLOTHES.map(loadOne)).then(function () {
-      AI.clothes = AI_CLOTHES.some(function (c) { return c.img; });
-    });
+    return Promise.all(ITEMS.map(loadOne));
   }
-  // 지금 그림체에서 이 옷을 보여 줄지
-  function itemShown(it, st) {
-    var ai = st.art === 'ai' && AI.status === 'ready';
-    if (it.ai) return ai && !!it.img;
-    // AI 그림을 불러오는 동안에는 직접 그린 옷이 잠깐 보였다 사라지지 않게 숨겨 둬요
-    if (st.art === 'ai' && AI.status === 'loading' && AI_REPLACES.indexOf(it.slot) >= 0) return false;
-    return !(ai && AI.clothes && AI_REPLACES.indexOf(it.slot) >= 0);
-  }
+  // 그림을 다 불러온 옷만 옷장에 나와요
+  function itemShown(it) { return !!it.img; }
   function aiBody(st) {
-    if (st.art !== 'ai' || AI.status !== 'ready') return null;
+    if (AI.status !== 'ready') return null;
     return AI.bodies[st.princess] || AI.bodies[AI.list[0].id];
   }
   // 윗몸과 다리를 따로 늘려서 붙여요 (다리 길이를 옷에 맞추려고)
@@ -1549,56 +579,35 @@
   }
 
   function dollMarkup(st, ctx, interactive, forExport) {
-    // AI 그림을 불러오는 동안에는 예전(직접 그린) 공주님 대신 기다림 표시를 보여 줘요
-    if (st.art === 'ai' && AI.status === 'loading') {
+    var ai = aiBody(st);
+    if (!ai) { // 그림을 불러오는 중이거나 못 찾았을 때
+      var msg = AI.status === 'loading' ? '공주님 부르는 중… ✨' : '공주님 그림을 못 찾았어요 😢';
       return '<g class="loading-doll"><ellipse cx="180" cy="420" rx="95" ry="300" fill="#fff" opacity=".18"/>' +
         '<text x="180" y="410" text-anchor="middle" font-size="80">👸</text>' +
-        '<text x="180" y="480" text-anchor="middle" font-size="30" fill="#fff" font-family="Jua, sans-serif">공주님 부르는 중… ✨</text></g>';
+        '<text x="180" y="480" text-anchor="middle" font-size="30" fill="#fff" font-family="Jua, sans-serif">' + msg + '</text></g>';
     }
-    var worn = {};
-    Object.keys(st.worn || {}).forEach(function (slot) {
-      var it = ITEM_BY_ID[st.worn[slot]];
-      if (it && itemShown(it, st)) worn[slot] = it.id;
+    var out = aiBodyMarkup(ai, ctx + 'ai', forExport);
+    LAYERS.forEach(function (slot) {
+      var it = st.worn && ITEM_BY_ID[st.worn[slot]];
+      if (!it || !itemShown(it)) return;
+      var html = it.draw(ctx + it.id, forExport);
+      out += interactive ? '<g class="worn" data-item="' + it.id + '">' + html + '</g>' : html;
     });
-    var wrap = function (slot, html) {
-      return interactive ? '<g class="worn" data-item="' + worn[slot] + '">' + html + '</g>' : html;
-    };
-    var hair = HAIRS[st.hair], ai = aiBody(st);
-    var out = ai ? '' : hairDefs(ctx + 'h', st.hairColor) + hair.back(ctx + 'h', st.hairColor);
-    SLOTS.forEach(function (slot) {
-      var it = worn[slot] && ITEM_BY_ID[worn[slot]];
-      if (it && it.back) out += wrap(slot, it.back(ctx + it.id + 'k'));
-    });
-    out += ai ? aiBodyMarkup(ai, ctx + 'ai', forExport) : bodySVG(ctx + 'b', st.skin);
-    LAYERS_UNDER.forEach(function (slot) {
-      var it = worn[slot] && ITEM_BY_ID[worn[slot]];
-      if (it) out += wrap(slot, it.draw(ctx + it.id, forExport));
-    });
-    if (!ai) out += hair.front(ctx + 'h', st.hairColor);
-    LAYERS_OVER.forEach(function (slot) {
-      var it = worn[slot] && ITEM_BY_ID[worn[slot]];
-      if (it) out += wrap(slot, it.draw(ctx + it.id, forExport));
-    });
-    if (!ai) out += handsSVG(ctx + 'b', st.skin);
     return out;
   }
 
   // =====================================================================
   //  상태
   // =====================================================================
-  var DEFAULT = { art: 'ai', princess: 'rose', hair: 'wavy', hairColor: '#c8742f', skin: '#ffe6d8', worn: {} };
+  var DEFAULT = { princess: 'rose', worn: {} };
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   var state = clone(DEFAULT);
   function sanitize(o) {
     var s = clone(DEFAULT);
     if (!o || typeof o !== 'object') return s;
-    if (o.art === 'ai' || o.art === 'draw') s.art = o.art;
     if (AI_PRINCESSES.some(function (p) { return p.id === o.princess; })) s.princess = o.princess;
-    if (HAIRS[o.hair]) s.hair = o.hair;
-    if (/^#[0-9a-fA-F]{6}$/.test(o.hairColor || '')) s.hairColor = o.hairColor.toLowerCase();
-    if (/^#[0-9a-fA-F]{6}$/.test(o.skin || '')) s.skin = o.skin.toLowerCase();
     if (o.worn && typeof o.worn === 'object') {
-      SLOTS.forEach(function (slot) {
+      LAYERS.forEach(function (slot) {
         var it = ITEM_BY_ID[o.worn[slot]];
         if (it && it.slot === slot) s.worn[slot] = it.id;
       });
@@ -1615,44 +624,33 @@
   // =====================================================================
   //  옷장 배치
   // =====================================================================
-  var BOX = {}, HOME = {}, PIECE = {};
-  function measureItems() {
-    var m = $('measure');
-    ITEMS.forEach(function (it) {
-      if (it.ai) return; // AI 옷은 불러올 때 재요
-      m.innerHTML = '<g id="mg">' + itemMarkup(it, 'm' + it.id) + '</g>';
-      var b = document.getElementById('mg').getBBox();
-      var pad = 7;
-      BOX[it.id] = { x: b.x - pad, y: b.y - pad, w: b.width + pad * 2, h: b.height + pad * 2 };
-    });
-    m.innerHTML = '';
-  }
+  var HOME = {}, PIECE = {};
   // 한 칸 안에 옷을 가장 크게 놓을 수 있는 배율을 찾아서 줄 맞춰 놓기
   function layoutPage(page) {
-    var items = ITEMS.filter(function (it) { return page.slots.indexOf(it.slot) >= 0 && itemShown(it, state); });
+    var items = ITEMS.filter(function (it) { return page.slots.indexOf(it.slot) >= 0 && itemShown(it); });
     items.sort(function (a, b) { return page.slots.indexOf(a.slot) - page.slots.indexOf(b.slot); });
     var W = 740, H = 650, GAP_X = 14, GAP_Y = 26;
     function flow(s) {
       var rows = [], row = [], x = 0;
       items.forEach(function (it) {
-        var w = BOX[it.id].w * s;
+        var w = it.box.w * s;
         if (row.length && x + w > W) { rows.push(row); row = []; x = 0; }
         row.push(it); x += w + GAP_X;
       });
       if (row.length) rows.push(row);
       var h = 0;
-      rows.forEach(function (r) { h += Math.max.apply(null, r.map(function (it) { return BOX[it.id].h * s; })) + GAP_Y; });
+      rows.forEach(function (r) { h += Math.max.apply(null, r.map(function (it) { return it.box.h * s; })) + GAP_Y; });
       return { rows: rows, h: h - GAP_Y };
     }
     var s = page.max || 0.9, f = flow(s);
     while (f.h > H && s > 0.2) { s -= 0.01; f = flow(s); }
     var y = Math.max(0, (H - f.h) / 2);
     f.rows.forEach(function (r) {
-      var rowW = r.reduce(function (acc, it) { return acc + BOX[it.id].w * s; }, 0) + GAP_X * (r.length - 1);
-      var rowH = Math.max.apply(null, r.map(function (it) { return BOX[it.id].h * s; }));
+      var rowW = r.reduce(function (acc, it) { return acc + it.box.w * s; }, 0) + GAP_X * (r.length - 1);
+      var rowH = Math.max.apply(null, r.map(function (it) { return it.box.h * s; }));
       var x = (W - rowW) / 2 + 9;
       r.forEach(function (it) {
-        var w = BOX[it.id].w * s, h = BOX[it.id].h * s;
+        var w = it.box.w * s, h = it.box.h * s;
         HOME[it.id] = { x: x, y: y + (rowH - h) / 2, w: w, h: h, page: page.id };
         x += w + GAP_X;
       });
@@ -1664,15 +662,15 @@
     piecesEl.innerHTML = '';
     PIECE = {};
     ITEMS.forEach(function (it) {
-      if (!itemShown(it, state)) return;
-      var h = HOME[it.id], b = BOX[it.id];
+      if (!itemShown(it)) return;
+      var h = HOME[it.id], b = it.box;
       var el = document.createElement('div');
       el.className = 'piece';
       el.dataset.id = it.id;
       el.style.left = h.x + 'px'; el.style.top = h.y + 'px';
       el.style.width = h.w + 'px'; el.style.height = h.h + 'px';
       el.innerHTML = '<svg viewBox="' + b.x + ' ' + b.y + ' ' + b.w + ' ' + b.h + '" xmlns="http://www.w3.org/2000/svg">' +
-        itemMarkup(it, 'r' + it.id) + '</svg><span class="tag">' + it.name + '</span>';
+        it.draw('r' + it.id) + '</svg><span class="tag">' + it.name + '</span>';
       el.addEventListener('pointerdown', function (e) { startDrag(e, it.id, false); });
       piecesEl.appendChild(el);
       PIECE[it.id] = el;
@@ -1687,12 +685,11 @@
     });
   }
 
-  // 그림체가 바뀌면 옷장을 다시 채우고, 안 보이게 된 옷은 벗겨요
-  function applyArt() {
-    AI_CLOTHES.forEach(function (c) { if (c.box) BOX[c.id] = c.box; });
+  // 그림을 다 불러오면 옷장을 채우고, 없는 옷은 벗겨요
+  function refreshAll() {
     Object.keys(state.worn).forEach(function (slot) {
       var it = ITEM_BY_ID[state.worn[slot]];
-      if (!it || !itemShown(it, state)) delete state.worn[slot];
+      if (!it || !itemShown(it)) delete state.worn[slot];
     });
     buildPieces(); refreshPieces(); renderDoll();
   }
@@ -1701,44 +698,26 @@
     $('tabs').innerHTML = PAGES.map(function (pg) {
       return '<button class="tab' + (pg.id === curPage ? ' active' : '') + '" data-page="' + pg.id + '">' + pg.label + '</button>';
     }).join('');
-    $('hairPanel').classList.toggle('show', curPage === 'hair');
-    if (curPage === 'hair') renderHairPanel();
+    $('princessPanel').classList.toggle('show', curPage === 'princess');
+    if (curPage === 'princess') renderPrincessPanel();
   }
 
-  function renderHairPanel() {
-    var aiOk = AI.status === 'ready', useAi = aiOk && state.art === 'ai';
-    var html = '<h3>🖌️ 그림체</h3><div class="sw-row">' +
-      '<button class="art-btn' + (useAi ? ' active' : '') + '" data-art="ai"' + (aiOk ? '' : ' disabled') + '>🤖 AI 그림</button>' +
-      '<button class="art-btn' + (useAi ? '' : ' active') + '" data-art="draw">✏️ 직접 그린 그림</button>' +
-      (aiOk ? '' : '<span class="art-note">' + (AI.status === 'loading' ? 'AI 그림을 불러오는 중이에요…' : 'AI 그림 파일을 찾지 못했어요 (assets/princess/body 폴더)') + '</span>') +
-      '</div>';
-    if (useAi) {
-      // AI 그림: 피부색·머리색이 다른 공주님 중에서 골라요
+  // 피부색·머리색이 다른 공주님 중에서 골라요
+  function renderPrincessPanel() {
+    var html = '<h3>👸 공주님 고르기</h3>';
+    if (AI.status !== 'ready') {
+      html += '<p class="art-note">' + (AI.status === 'loading' ? '공주님을 부르는 중이에요… ✨' : '공주님 그림 파일을 찾지 못했어요 (assets/princess/body 폴더)') + '</p>';
+    } else {
       var cur = aiBody(state);
-      html += '<h3>👸 공주님 고르기</h3><div class="hair-row">';
+      html += '<div class="hair-row">';
       AI.list.forEach(function (pr) {
         var b = AI.bodies[pr.id];
         html += '<button class="hair-btn' + (b === cur ? ' active' : '') + '" data-princess="' + pr.id + '">' +
           '<svg viewBox="80 0 200 330">' + aiBodyMarkup(b, 'pp' + pr.id, false) + '</svg>' + pr.name + '</button>';
       });
-      $('hairPanel').innerHTML = html + '</div><p class="art-note">머리 모양·머리색·피부색을 직접 바꾸고 싶으면 ✏️ 직접 그린 그림을 골라요.</p>';
-      return;
+      html += '</div>';
     }
-    html += '<h3>💇‍♀️ 머리 모양</h3><div class="hair-row">';
-    HAIR_ORDER.forEach(function (key) {
-      var prev = { art: 'draw', hair: key, hairColor: state.hairColor, skin: state.skin, worn: {} };
-      html += '<button class="hair-btn' + (state.hair === key ? ' active' : '') + '" data-hair="' + key + '">' +
-        '<svg viewBox="60 -10 240 360">' + dollMarkup(prev, 'hp' + key, false) + '</svg>' + HAIRS[key].name + '</button>';
-    });
-    html += '</div><h3>🎨 머리 색깔</h3><div class="sw-row">';
-    HAIR_COLORS.forEach(function (c) {
-      html += '<div class="sw' + (state.hairColor === c ? ' active' : '') + '" style="background:' + c + '" data-hc="' + c + '"></div>';
-    });
-    html += '</div><h3>🌸 피부색</h3><div class="sw-row">';
-    SKIN_COLORS.forEach(function (c) {
-      html += '<div class="sw' + (state.skin === c ? ' active' : '') + '" style="background:' + c + '" data-skin="' + c + '"></div>';
-    });
-    $('hairPanel').innerHTML = html + '</div>';
+    $('princessPanel').innerHTML = html;
   }
 
   // =====================================================================
@@ -1850,17 +829,15 @@
   }
   function randomize() {
     var pick = function (arr) { return arr[Math.floor(Math.random() * arr.length)]; };
-    var bySlot = function (slot) { return ITEMS.filter(function (it) { return it.slot === slot && itemShown(it, state); }); };
+    var bySlot = function (slot) { return ITEMS.filter(function (it) { return it.slot === slot && itemShown(it); }); };
     var w = {}, put = function (slot) { var list = bySlot(slot); if (list.length) w[slot] = pick(list).id; };
     if (Math.random() < 0.5) put('dress');
     else { put('top'); put('bottom'); }
     put('shoes');
-    var chance = { outer: 0.35, socks: 0.35, head: 0.75, necklace: 0.5, glasses: 0.15, bag: 0.35, hand: 0.35 };
+    var chance = { outer: 0.3, socks: 0.25, head: 0.75, ear: 0.3, necklace: 0.45, glasses: 0.15, bag: 0.3, hand: 0.25 };
     Object.keys(chance).forEach(function (slot) { if (Math.random() < chance[slot]) put(slot); });
     state.worn = w;
-    state.hair = pick(HAIR_ORDER);
     if (AI.list.length) state.princess = pick(AI.list).id;
-    state.hairColor = pick(HAIR_COLORS);
     renderDoll(); refreshPieces(); renderTabs();
     burst(210, 300); burst(210, 560);
     toast('🎲 짜잔! 새로운 코디예요');
@@ -1872,16 +849,11 @@
     curPage = b.dataset.page;
     renderTabs(); refreshPieces();
   });
-  $('hairPanel').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-hair],[data-hc],[data-skin],[data-art],[data-princess]');
-    if (!b || b.disabled) return;
-    if (b.dataset.art) state.art = b.dataset.art;
-    if (b.dataset.princess) state.princess = b.dataset.princess;
-    if (b.dataset.hair) state.hair = b.dataset.hair;
-    if (b.dataset.hc) state.hairColor = b.dataset.hc;
-    if (b.dataset.skin) state.skin = b.dataset.skin;
-    if (b.dataset.art) applyArt(); else renderDoll();
-    renderHairPanel();
+  $('princessPanel').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-princess]');
+    if (!b) return;
+    state.princess = b.dataset.princess;
+    renderDoll(); renderPrincessPanel();
   });
   $('resetBtn').addEventListener('click', function () {
     state.worn = {};
@@ -1911,7 +883,7 @@
       '<rect width="600" height="1000" fill="url(#pbg)"/><path d="' + rays + '" fill="#fff" opacity=".12"/>' +
       '<ellipse cx="300" cy="940" rx="180" ry="30" fill="url(#ppt)" stroke="#e0a000" stroke-width="3"/>' +
       '<g transform="translate(120 60)">' + dollMarkup(state, 'x', false, true) + '</g>' +
-      '<text x="300" y="990" text-anchor="middle" font-size="26" fill="#fff" font-family="Jua, sans-serif">공주님 옷 입히기</text></svg>';
+      '<text x="300" y="990" text-anchor="middle" font-size="26" fill="#fff" font-family="Jua, sans-serif">성모 공주님 옷 입히기</text></svg>';
   }
   function takePhoto() {
     var img = new Image(), W = 600, H = 1000;
@@ -1999,7 +971,7 @@
       }).catch(function (err) { $('saveHint').textContent = '앗, 저장하지 못했어요: ' + errMsg(err); });
     } else if (b.dataset.load) {
       state = sanitize(slotData[n - 1]);
-      applyArt(); renderTabs();
+      refreshAll(); renderTabs();
       $('saveModal').classList.remove('open');
       burst(210, 400);
       toast('👗 ' + n + '번 서랍의 옷을 입었어요!');
@@ -2037,14 +1009,13 @@
   })();
 
   fit();
-  measureItems();
   buildPieces();
   renderTabs();
   refreshPieces();
   renderDoll();
   loadAI().then(function () {
-    applyArt();
-    if (curPage === 'hair') renderHairPanel();
+    refreshAll();
+    if (curPage === 'princess') renderPrincessPanel();
   });
   </script>
 </body>
