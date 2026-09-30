@@ -1361,6 +1361,7 @@
     { id: 'coco', name: '코코' }, { id: 'amber', name: '앰버' }, { id: 'peach', name: '피치' }
   ];
   var AI_BASES = [
+    'https://raw.githubusercontent.com/bdler/seoungmo-Clothes/HEAD/assets/princess/body/', // 저장소 기본 브랜치
     'https://cdn.jsdelivr.net/gh/bdler/seoungmo-Clothes@main/assets/princess/body/',
     'https://raw.githubusercontent.com/bdler/seoungmo-Clothes/main/assets/princess/body/',
     'https://raw.githubusercontent.com/bdler/seoungmo-Clothes/claude/sweet-faraday-7oa3ur/assets/princess/body/'
@@ -1481,11 +1482,11 @@
   }
   function loadAI() {
     var loadOne = function (p) {
-      var tryAt = function (i, ext) {
-        if (i >= AI_BASES.length) return ext === 'png' ? tryAt(0, 'jpg') : Promise.reject(new Error(p.id));
-        return loadImg(AI_BASES[i] + p.id + '.' + ext).catch(function () { return tryAt(i + 1, ext); });
+      var tryAt = function (i) {
+        if (i >= AI_BASES.length) return Promise.reject(new Error(p.id));
+        return loadImg(AI_BASES[i] + p.id + '.png').catch(function () { return tryAt(i + 1); });
       };
-      return tryAt(0, 'png').then(prepareBody).then(function (b) { AI.bodies[p.id] = b; }, function () {});
+      return tryAt(0).then(prepareBody).then(function (b) { AI.bodies[p.id] = b; }, function () {});
     };
     return Promise.all(AI_PRINCESSES.map(loadOne)).then(function () {
       AI.list = AI_PRINCESSES.filter(function (p) { return AI.bodies[p.id]; });
@@ -1526,6 +1527,8 @@
   function itemShown(it, st) {
     var ai = st.art === 'ai' && AI.status === 'ready';
     if (it.ai) return ai && !!it.img;
+    // AI 그림을 불러오는 동안에는 직접 그린 옷이 잠깐 보였다 사라지지 않게 숨겨 둬요
+    if (st.art === 'ai' && AI.status === 'loading' && AI_REPLACES.indexOf(it.slot) >= 0) return false;
     return !(ai && AI.clothes && AI_REPLACES.indexOf(it.slot) >= 0);
   }
   function aiBody(st) {
@@ -1546,6 +1549,12 @@
   }
 
   function dollMarkup(st, ctx, interactive, forExport) {
+    // AI 그림을 불러오는 동안에는 예전(직접 그린) 공주님 대신 기다림 표시를 보여 줘요
+    if (st.art === 'ai' && AI.status === 'loading') {
+      return '<g class="loading-doll"><ellipse cx="180" cy="420" rx="95" ry="300" fill="#fff" opacity=".18"/>' +
+        '<text x="180" y="410" text-anchor="middle" font-size="80">👸</text>' +
+        '<text x="180" y="480" text-anchor="middle" font-size="30" fill="#fff" font-family="Jua, sans-serif">공주님 부르는 중… ✨</text></g>';
+    }
     var worn = {};
     Object.keys(st.worn || {}).forEach(function (slot) {
       var it = ITEM_BY_ID[st.worn[slot]];
