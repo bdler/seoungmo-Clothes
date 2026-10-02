@@ -16,7 +16,7 @@
       font-family: 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
       user-select: none; -webkit-user-select: none;
     }
-    #viewport { position: fixed; inset: 0; }
+    #viewport { position: fixed; inset: 0; touch-action: none; }
     /* 게임 화면은 1160 x 830 크기로 그리고 창 크기에 맞게 확대/축소 */
     #game {
       position: absolute;
@@ -40,7 +40,7 @@
     .twinkle {
       position: absolute; color: #fff; pointer-events: none;
       text-shadow: 0 0 8px #fff, 0 0 16px #ffb3f0;
-      animation: twinkle 2.4s ease-in-out infinite;
+      animation: twinkle 2.4s steps(3, jump-none) infinite; /* 매 프레임 다시 그리지 않게 몇 단계로만 반짝여요 */
     }
     @keyframes twinkle {
       0%, 100% { opacity: .15; transform: scale(.6) rotate(0); }
@@ -56,7 +56,7 @@
     }
     .pedestal { position: absolute; left: -30px; top: 700px; width: 360px; height: 80px; }
     #doll { position: absolute; left: 0; top: 0; width: 300px; height: 750px; touch-action: none; overflow: visible; }
-    #doll .worn { cursor: grab; }
+    #doll.can-grab { cursor: grab; }
     #doll .eyes { animation: blink 5s infinite; transform-box: fill-box; transform-origin: center; }
     @keyframes blink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.08); } }
     #dollWrap.hover #doll { filter: drop-shadow(0 0 10px #fff) drop-shadow(0 0 22px #ffe45c); }
@@ -77,7 +77,9 @@
       transition: opacity .4s;
       z-index: 20;
     }
-    #game.full #rack { opacity: 0; pointer-events: none; }
+    #game.full #rack { pointer-events: none; }
+    #game.full #tabs, #game.full #princessPanel, #game.full .piece:not(.flying) { opacity: 0; pointer-events: none; }
+    #tabs, #princessPanel { transition: opacity .4s; }
     #game.full #dollWrap { left: 430px; }
     #tabs { position: absolute; left: 6px; top: 4px; right: 6px; display: flex; gap: 5px; justify-content: center; }
     .tab {
@@ -105,13 +107,18 @@
       filter: drop-shadow(0 5px 4px rgba(40,0,60,.35));
       transition: left .45s cubic-bezier(.4,1.5,.5,1), top .45s cubic-bezier(.4,1.5,.5,1), transform .15s, opacity .3s;
     }
-    .piece svg { width: 100%; height: 100%; display: block; overflow: visible; }
-    .piece:hover { transform: scale(1.06) rotate(-2deg); filter: drop-shadow(0 0 6px #fff) drop-shadow(0 6px 5px rgba(40,0,60,.35)); }
+    /* 옷 그림은 칸 안에서만 그려요 (칸 밖으로 넘친 투명한 부분까지 그림자를 계산하면 아주 느려져요) */
+    .piece svg { width: 100%; height: 100%; display: block; overflow: hidden; }
+    @media (hover: hover) {
+      .piece:hover { transform: scale(1.06) rotate(-2deg); filter: drop-shadow(0 0 6px #fff) drop-shadow(0 6px 5px rgba(40,0,60,.35)); }
+      .piece:hover .tag { opacity: 1; }
+    }
     .piece.off { display: none; }
     .piece.worn { visibility: hidden; }
-    .piece.flying { display: block !important; visibility: visible !important; }
+    .piece.flying, .piece.dragging { display: block !important; visibility: visible !important; }
     .piece.dragging {
       transition: none; cursor: grabbing; z-index: 1000;
+      will-change: transform; /* 끄는 옷은 따로 그려서 공주님을 매번 다시 그리지 않게 */
       transform: scale(1.1) rotate(-3deg);
       filter: drop-shadow(0 0 8px #fff) drop-shadow(0 14px 10px rgba(40,0,60,.45));
     }
@@ -121,7 +128,6 @@
       background: rgba(120,20,140,.75); padding: 1px 8px; border-radius: 99px;
       opacity: 0; transition: opacity .15s; pointer-events: none;
     }
-    .piece:hover .tag { opacity: 1; }
     .piece.dragging .tag { opacity: 0; }
 
     #princessPanel { position: absolute; left: 20px; top: 70px; right: 20px; display: none; color: #fff; }
@@ -363,13 +369,7 @@
     { id: 'ai_hand_wand', slot: 'hand', name: '요술봉' }
   ];
   ITEMS.forEach(function (c) {
-    c.draw = function (p, forExport) {
-      if (!c.img) return '';
-      // 그림은 투명한 곳까지 네모라서, 잡기는 옷이 있는 곳의 네모로만 해요
-      var bx = c.box;
-      return '<g pointer-events="none">' + aiBodyMarkup(AI.bodies.rose, p, forExport, c.img) + '</g>' +
-        '<rect x="' + bx.x.toFixed(1) + '" y="' + bx.y.toFixed(1) + '" width="' + bx.w.toFixed(1) + '" height="' + bx.h.toFixed(1) + '" fill="#000" fill-opacity="0"/>';
-    };
+    c.draw = function (p) { return c.img ? layerMarkup(AI.bodies.rose, p, c.img) : ''; };
   });
   var ITEM_BY_ID = {};
   ITEMS.forEach(function (it) { ITEM_BY_ID[it.id] = it; });
@@ -510,10 +510,11 @@
       var s = 850 / Math.max(1, feet);
       fit = { x: 180 - W * s / 2, w: W * s, y: 30, h: H * s, yCut: 2000, legY: 30, legH: H * s };
     }
+    fit.canvas = cv; // 사진 찍을 때 그대로 그려요
+    fit.crop = { x: 0, y: 0, w: W, h: H, W: W, H: H };
     return new Promise(function (res) {
       cv.toBlob(function (blob) {
         fit.url = URL.createObjectURL(blob);
-        fit.data = cv.toDataURL('image/png');
         res(fit);
       }, 'image/png');
     });
@@ -524,7 +525,12 @@
         if (i >= AI_BASES.length) return Promise.reject(new Error(p.id));
         return loadImg(AI_BASES[i] + p.id + '.png').catch(function () { return tryAt(i + 1); });
       };
-      return tryAt(0).then(prepareBody).then(function (b) { AI.bodies[p.id] = b; }, function () {});
+      return tryAt(0).then(function (img) {
+        return prepareBody(img).then(function (b) {
+          URL.revokeObjectURL(img.src); // 원본은 이제 필요 없어요
+          AI.bodies[p.id] = b;
+        });
+      }).catch(function () {});
     };
     return Promise.all(AI_PRINCESSES.map(loadOne)).then(function () {
       AI.list = AI_PRINCESSES.filter(function (p) { return AI.bodies[p.id]; });
@@ -544,17 +550,37 @@
         var W = img.naturalWidth, H = img.naturalHeight;
         var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
         var g = cv.getContext('2d'); g.drawImage(img, 0, 0);
-        var d = g.getImageData(0, 0, W, H).data, x0 = W, x1 = -1, y0 = H, y1 = -1;
+        URL.revokeObjectURL(img.src);
+        var d = g.getImageData(0, 0, W, H).data, x0 = W, x1 = -1, y0 = H, y1 = -1, X0 = W, X1 = -1, Y0 = H, Y1 = -1;
         for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) {
-          if (d[(y * W + x) * 4 + 3] > 40) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+          var a = d[(y * W + x) * 4 + 3];
+          if (a > 0) { if (x < X0) X0 = x; if (x > X1) X1 = x; if (y < Y0) Y0 = y; if (y > Y1) Y1 = y; }
+          if (a > 40) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
         }
         if (x1 < 0) throw new Error(c.id);
+        // 옷이 있는 부분만 잘라 둬요 (투명한 큰 그림을 그대로 쓰면 느리고 메모리도 많이 써요)
+        var crop = { x: X0, y: Y0, w: X1 - X0 + 1, h: Y1 - Y0 + 1, W: W, H: H };
+        var cc = document.createElement('canvas'); cc.width = crop.w; cc.height = crop.h;
+        cc.getContext('2d').drawImage(cv, crop.x, crop.y, crop.w, crop.h, 0, 0, crop.w, crop.h);
+        // 공주님 위에서 어느 옷을 집었는지 알아내는 반투명 지도 (2픽셀마다 하나)
+        var mw = Math.ceil(crop.w / 2), mh = Math.ceil(crop.h / 2), mask = new Uint8Array(mw * mh);
+        for (var my = 0; my < mh; my++) for (var mx = 0; mx < mw; mx++) {
+          mask[my * mw + mx] = d[((crop.y + my * 2) * W + crop.x + mx * 2) * 4 + 3] > 40 ? 1 : 0;
+        }
+        crop.mask = mask; crop.mw = mw; crop.mh = mh;
         // 그림 좌표 → 공주님 좌표 (다리 아래쪽은 따로 늘린 값으로)
         var cutF = (rose.yCut - rose.y) / rose.h;
         var sy = function (yy) { var f = yy / H; return f < cutF ? rose.y + f * rose.h : rose.legY + f * rose.legH; };
         var sx = function (xx) { return rose.x + xx / W * rose.w; }, pad = 7;
         c.box = { x: sx(x0) - pad, y: sy(y0) - pad, w: sx(x1 + 1) - sx(x0) + pad * 2, h: sy(y1 + 1) - sy(y0) + pad * 2 };
-        c.img = { url: img.src, data: cv.toDataURL('image/png') };
+        return new Promise(function (res) {
+          cc.toBlob(function (blob) {
+            crop.url = URL.createObjectURL(blob);
+            crop.canvas = cc;
+            c.img = crop;
+            res();
+          }, 'image/png');
+        });
       }).catch(function () {});
     };
     return Promise.all(ITEMS.map(loadOne));
@@ -565,20 +591,32 @@
     if (AI.status !== 'ready') return null;
     return AI.bodies[st.princess] || AI.bodies[AI.list[0].id];
   }
-  // 윗몸과 다리를 따로 늘려서 붙여요 (다리 길이를 옷에 맞추려고)
-  function aiBodyMarkup(b, ctx, forExport, src) {
-    src = src || b;
-    var href = forExport ? src.data : src.url, yc = b.yCut.toFixed(1);
-    var img = function (y, h, clip) {
-      return '<image href="' + href + '" x="' + b.x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + b.w.toFixed(1) +
-        '" height="' + h.toFixed(1) + '" preserveAspectRatio="none" clip-path="url(#' + ctx + clip + ')"/>';
-    };
-    return '<defs><clipPath id="' + ctx + 'up"><rect x="-200" y="-200" width="760" height="' + (b.yCut + 200.6).toFixed(1) + '"/></clipPath>' +
-      '<clipPath id="' + ctx + 'lo"><rect x="-200" y="' + yc + '" width="760" height="1200"/></clipPath></defs>' +
-      img(b.legY, b.legH, 'lo') + img(b.y, b.h, 'up');
+  // 공주님 맞춤값 b 로 그림 한 장(src)을 그려요. 윗몸과 다리는 따로 늘려서 붙여요 (다리 길이를 옷에 맞추려고)
+  // src.crop 은 원래 그림(W x H)에서 잘라 낸 부분이에요
+  function layerParts(b, c) {
+    var x = b.x + c.x / c.W * b.w, w = c.w / c.W * b.w, parts = [];
+    var upY = b.y + c.y / c.H * b.h, upH = c.h / c.H * b.h;
+    var loY = b.legY + c.y / c.H * b.legH, loH = c.h / c.H * b.legH;
+    if (upY < b.yCut) parts.push({ x: x, y: upY, w: w, h: upH, clipTop: -200, clipH: b.yCut + 200.6, whole: upY + upH <= b.yCut });
+    if (loY + loH > b.yCut) parts.push({ x: x, y: loY, w: w, h: loH, clipTop: b.yCut, clipH: 1200, whole: loY >= b.yCut });
+    return parts;
   }
+  function layerMarkup(b, ctx, c) {
+    var out = '';
+    layerParts(b, c).forEach(function (q, i) {
+      var clip = '';
+      if (!q.whole) {
+        out += '<clipPath id="' + ctx + 'c' + i + '"><rect x="-200" y="' + q.clipTop.toFixed(1) + '" width="760" height="' + q.clipH.toFixed(1) + '"/></clipPath>';
+        clip = ' clip-path="url(#' + ctx + 'c' + i + ')"';
+      }
+      out += '<image href="' + c.url + '" x="' + q.x.toFixed(1) + '" y="' + q.y.toFixed(1) + '" width="' + q.w.toFixed(1) +
+        '" height="' + q.h.toFixed(1) + '" preserveAspectRatio="none" pointer-events="none"' + clip + '/>';
+    });
+    return out;
+  }
+  function aiBodyMarkup(b, ctx) { return layerMarkup(b, ctx, { url: b.url, x: 0, y: 0, w: b.crop.W, h: b.crop.H, W: b.crop.W, H: b.crop.H }); }
 
-  function dollMarkup(st, ctx, interactive, forExport) {
+  function dollMarkup(st, ctx, interactive) {
     var ai = aiBody(st);
     if (!ai) { // 그림을 불러오는 중이거나 못 찾았을 때
       var msg = AI.status === 'loading' ? '공주님 부르는 중… ✨' : '공주님 그림을 못 찾았어요 😢';
@@ -586,14 +624,45 @@
         '<text x="180" y="410" text-anchor="middle" font-size="80">👸</text>' +
         '<text x="180" y="480" text-anchor="middle" font-size="30" fill="#fff" font-family="Jua, sans-serif">' + msg + '</text></g>';
     }
-    var out = aiBodyMarkup(ai, ctx + 'ai', forExport);
-    LAYERS.forEach(function (slot) {
-      var it = st.worn && ITEM_BY_ID[st.worn[slot]];
-      if (!it || !itemShown(it)) return;
-      var html = it.draw(ctx + it.id, forExport);
-      out += interactive ? '<g class="worn" data-item="' + it.id + '">' + html + '</g>' : html;
+    var out = aiBodyMarkup(ai, ctx + 'ai');
+    wornList(st).forEach(function (it) {
+      var html = it.draw(ctx + it.id);
+      out += interactive ? '<g data-item="' + it.id + '">' + html + '</g>' : html;
     });
     return out;
+  }
+  // 입은 옷 (아래 → 위 순서)
+  function wornList(st) {
+    var list = [];
+    LAYERS.forEach(function (slot) {
+      var it = st.worn && ITEM_BY_ID[st.worn[slot]];
+      if (it && itemShown(it)) list.push(it);
+    });
+    return list;
+  }
+  // 공주님 위의 한 점(공주님 좌표)에 보이는 옷 중 가장 위에 있는 옷을 찾아요
+  function pickWorn(x, y) {
+    var rose = AI.bodies.rose, list = wornList(state).reverse();
+    if (!rose || !list.length) return null;
+    var hit = function (it, tol) {
+      var c = it.img, px = (x - rose.x) / rose.w * c.W - c.x;
+      var py = (y >= rose.yCut ? (y - rose.legY) / rose.legH : (y - rose.y) / rose.h) * c.H - c.y;
+      var mx = Math.floor(px / 2), my = Math.floor(py / 2);
+      for (var dy = -tol; dy <= tol; dy++) for (var dx = -tol; dx <= tol; dx++) {
+        var u = mx + dx, v = my + dy;
+        if (u >= 0 && v >= 0 && u < c.mw && v < c.mh && c.mask[v * c.mw + u]) return true;
+      }
+      return false;
+    };
+    var i;
+    for (i = 0; i < list.length; i++) if (hit(list[i], 0)) return list[i].id;
+    for (i = 0; i < list.length; i++) if (hit(list[i], 3)) return list[i].id; // 손가락은 조금 넉넉하게
+    var best = null; // 그래도 없으면 그 점을 감싸는 가장 작은 옷
+    list.forEach(function (it) {
+      var b = it.box;
+      if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h && (!best || b.w * b.h < best.box.w * best.box.h)) best = it;
+    });
+    return best && best.id;
   }
 
   // =====================================================================
@@ -658,6 +727,7 @@
     });
   }
   function buildPieces() {
+    if (drag) endDrag(null);
     PAGES.forEach(function (pg) { if (pg.slots.length) layoutPage(pg); });
     piecesEl.innerHTML = '';
     PIECE = {};
@@ -749,57 +819,113 @@
     var x = dollWrap.offsetLeft, y = dollWrap.offsetTop;
     return pt.x > x + 10 && pt.x < x + 290 && pt.y > y && pt.y < y + 760;
   }
+  // 손가락/마우스 위치 → 공주님 그림 좌표 (360 x 900)
+  function toDoll(e) {
+    var m = dollSvg.getScreenCTM();
+    if (!m) return null;
+    var pt = dollSvg.createSVGPoint();
+    pt.x = e.clientX; pt.y = e.clientY;
+    return pt.matrixTransform(m.inverse());
+  }
   function startDrag(e, id, fromDoll) {
-    if (drag) return;
+    if (e.button > 0) return; // 오른쪽·가운데 단추로는 끌지 않아요 (메뉴가 놓는 신호를 먹어서 멈출 수 있어요)
+    if (drag) {
+      // 두 번째 손가락은 무시하고, 새로 누른 첫 손가락이면 이전 끌기는 (놓는 신호를 잃어버린 것이니) 취소해요
+      if (!e.isPrimary && e.pointerId !== drag.pointerId) return;
+      endDrag(null);
+    }
+    var el = PIECE[id], it = ITEM_BY_ID[id], h = HOME[id];
+    if (!el || !it || !h) return;
     e.preventDefault();
-    var el = PIECE[id], pt = toStage(e), h = HOME[id], offX, offY;
+    clearTimeout(el._flyT);
+    var pt = toStage(e), offX, offY;
     if (fromDoll) {
-      unwear(id);
+      // 누른 그림을 지우지 않고 숨기기만 해요 (지우면 일부 브라우저에서 손가락 신호가 끊겨 멈춰요)
+      var g = dollSvg.querySelector('[data-item="' + id + '"]');
+      if (g) g.style.visibility = 'hidden';
+      delete state.worn[it.slot];
+      refreshPieces();
       offX = h.w / 2; offY = h.h / 2;
       el.classList.add('flying');
     } else {
-      offX = pt.x - (PIECES_X + h.x); offY = pt.y - (PIECES_Y + h.y);
+      // 제자리로 날아가는 중이어도 손가락이 잡은 자리 그대로
+      var cs = getComputedStyle(el);
+      offX = pt.x - (PIECES_X + (parseFloat(cs.left) || h.x)); offY = pt.y - (PIECES_Y + (parseFloat(cs.top) || h.y));
     }
     el.classList.add('dragging');
-    drag = { id: id, el: el, offX: offX, offY: offY, pointerId: e.pointerId };
-    moveTo(pt);
+    drag = { id: id, el: el, offX: offX, offY: offY, pointerId: e.pointerId, fromDoll: fromDoll, over: false };
+    // 이후 움직임은 모두 이 옷 조각으로 오게 해요 (iframe 안에서도 놓치지 않게)
+    try { el.setPointerCapture(e.pointerId); } catch (err) {}
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', onUp);
+    window.addEventListener('pointercancel', onCancel);
+    moveTo(pt);
   }
   function moveTo(pt) {
+    var over = overDoll(pt);
     drag.el.style.left = (pt.x - drag.offX - PIECES_X) + 'px';
     drag.el.style.top = (pt.y - drag.offY - PIECES_Y) + 'px';
-    dollWrap.classList.toggle('hover', overDoll(pt));
+    if (over !== drag.over) { drag.over = over; dollWrap.classList.toggle('hover', over); }
   }
-  function onMove(e) { if (drag && e.pointerId === drag.pointerId) moveTo(toStage(e)); }
-  function onUp(e) {
+  function onMove(e) {
     if (!drag || e.pointerId !== drag.pointerId) return;
+    if (e.pointerType === 'mouse' && e.buttons === 0) { endDrag(null); return; } // 놓는 신호를 놓친 마우스
+    moveTo(toStage(e));
+  }
+  function onUp(e) { if (drag && e.pointerId === drag.pointerId) endDrag(e); }
+  function onCancel(e) { if (drag && e.pointerId === drag.pointerId) endDrag(null); }
+  // e 가 없으면 '취소': 공주님에게서 가져온 옷은 다시 입히고, 옷장 옷은 제자리로
+  function endDrag(e) {
+    var d = drag;
+    if (!d) return;
+    drag = null;
     window.removeEventListener('pointermove', onMove);
     window.removeEventListener('pointerup', onUp);
-    window.removeEventListener('pointercancel', onUp);
-    var pt = toStage(e), d = drag, h = HOME[d.id];
-    drag = null;
+    window.removeEventListener('pointercancel', onCancel);
+    try { if (d.el.hasPointerCapture && d.el.hasPointerCapture(d.pointerId)) d.el.releasePointerCapture(d.pointerId); } catch (err) {}
     dollWrap.classList.remove('hover');
     d.el.classList.remove('dragging');
-    if (overDoll(pt)) {
-      // 공주님에게 쏙! 옷장 자리는 비워 둠
-      d.el.style.transition = 'none';
-      d.el.style.left = h.x + 'px'; d.el.style.top = h.y + 'px';
-      d.el.classList.remove('flying');
-      wear(d.id);
-      void d.el.offsetWidth;
+    var h = HOME[d.id], pt = e ? toStage(e) : null;
+    var putOn = pt ? overDoll(pt) : d.fromDoll;
+    try {
+      if (putOn) {
+        // 공주님에게 쏙! 옷장 자리는 비워 둠
+        d.el.style.transition = 'none';
+        d.el.style.left = h.x + 'px'; d.el.style.top = h.y + 'px';
+        d.el.classList.remove('flying');
+        wear(d.id);
+        void d.el.offsetWidth;
+        d.el.style.transition = '';
+        if (pt) burst(pt.x, pt.y);
+      } else {
+        // 공주님 밖에 놓으면 제자리로 돌아가기
+        d.el.style.left = h.x + 'px'; d.el.style.top = h.y + 'px';
+        if (d.fromDoll) renderDoll();
+        d.el._flyT = setTimeout(function () { d.el.classList.remove('flying'); }, 460);
+      }
+    } catch (err) {
       d.el.style.transition = '';
-      burst(pt.x, pt.y);
-    } else {
-      // 공주님 밖에 놓으면 제자리로 돌아가기
-      d.el.style.left = h.x + 'px'; d.el.style.top = h.y + 'px';
-      setTimeout(function () { d.el.classList.remove('flying'); }, 460);
+      try { renderDoll(); refreshPieces(); } catch (err2) {}
     }
   }
+  // 끌던 옷 조각이 잡기를 잃어버리거나(지워짐 등), 창을 떠나면 끌기를 취소해요
+  document.addEventListener('lostpointercapture', function (e) {
+    if (drag && e.pointerId === drag.pointerId && (e.target === drag.el || e.target === document)) endDrag(null);
+  }, true);
+  window.addEventListener('blur', function () { endDrag(null); });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) endDrag(null); });
+  // 오른쪽 클릭 메뉴는 놓는 신호를 삼켜 버려서 막아 둬요
+  game.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
   dollSvg.addEventListener('pointerdown', function (e) {
-    var g = e.target.closest && e.target.closest('[data-item]');
-    if (g) startDrag(e, g.getAttribute('data-item'), true);
+    var p = toDoll(e), id = p && pickWorn(p.x, p.y);
+    if (id) startDrag(e, id, true);
+  });
+  // 옷 위에 마우스를 올리면 잡을 수 있다는 손 모양
+  dollSvg.addEventListener('pointermove', function (e) {
+    if (drag || e.pointerType !== 'mouse') return;
+    var p = toDoll(e);
+    dollSvg.classList.toggle('can-grab', !!(p && pickWorn(p.x, p.y)));
   });
 
   function burst(x, y) {
@@ -869,7 +995,9 @@
   // =====================================================================
   //  사진 찍기
   // =====================================================================
-  function sceneSVG(W, H) {
+  // 배경(빛줄기·받침대)만 SVG로 그리고, 공주님과 옷은 캔버스에 바로 그려요
+  // (예전처럼 그림을 글자로 바꿔 SVG에 넣으면 아주 커져서 화면이 잠깐 멈췄어요)
+  function sceneBgSVG(W, H) {
     var rays = '';
     for (var i = 0; i < 24; i++) {
       var a1 = i * Math.PI / 12, a2 = a1 + Math.PI / 30;
@@ -881,24 +1009,55 @@
       '<stop offset=".7" stop-color="#8a26c9"/><stop offset="1" stop-color="#45107f"/></radialGradient>' +
       '<linearGradient id="ppt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff7b0"/><stop offset="1" stop-color="#ffc21a"/></linearGradient></defs>' +
       '<rect width="600" height="1000" fill="url(#pbg)"/><path d="' + rays + '" fill="#fff" opacity=".12"/>' +
-      '<ellipse cx="300" cy="940" rx="180" ry="30" fill="url(#ppt)" stroke="#e0a000" stroke-width="3"/>' +
-      '<g transform="translate(120 60)">' + dollMarkup(state, 'x', false, true) + '</g>' +
-      '<text x="300" y="990" text-anchor="middle" font-size="26" fill="#fff" font-family="Jua, sans-serif">성모 공주님 옷 입히기</text></svg>';
+      '<ellipse cx="300" cy="940" rx="180" ry="30" fill="url(#ppt)" stroke="#e0a000" stroke-width="3"/></svg>';
   }
+  function drawLayer(g, b, c, src) {
+    layerParts(b, c).forEach(function (q) {
+      g.save();
+      if (!q.whole) { g.beginPath(); g.rect(-200, q.clipTop, 760, q.clipH); g.clip(); }
+      g.drawImage(src, q.x, q.y, q.w, q.h);
+      g.restore();
+    });
+  }
+  var photoBusy = false;
   function takePhoto() {
-    var img = new Image(), W = 600, H = 1000;
-    img.onload = function () {
-      var cv = document.createElement('canvas');
-      cv.width = W; cv.height = H;
-      cv.getContext('2d').drawImage(img, 0, 0, W, H);
-      var url;
-      try { url = cv.toDataURL('image/png'); } catch (e) { url = img.src; }
+    var ai = aiBody(state);
+    if (photoBusy || !ai) return;
+    photoBusy = true;
+    var W = 600, H = 1000, bg = new Image();
+    var fail = function () { photoBusy = false; toast('앗, 사진을 만들지 못했어요'); };
+    var show = function (url) {
       $('photoImg').src = url;
       $('photoDownload').href = url;
       $('photoModal').classList.add('open');
+      photoBusy = false;
     };
-    img.onerror = function () { toast('앗, 사진을 만들지 못했어요'); };
-    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(sceneSVG(W, H));
+    var fontReady = document.fonts && document.fonts.load ? document.fonts.load('26px Jua').catch(function () {}) : Promise.resolve();
+    bg.onload = function () {
+      fontReady.then(function () {
+        var cv = document.createElement('canvas');
+        cv.width = W; cv.height = H;
+        var g = cv.getContext('2d');
+        g.drawImage(bg, 0, 0, W, H);
+        g.save();
+        g.translate(120, 60);
+        drawLayer(g, ai, ai.crop, ai.canvas);
+        wornList(state).forEach(function (it) { drawLayer(g, AI.bodies.rose, it.img, it.img.canvas); });
+        g.restore();
+        g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '26px Jua, sans-serif';
+        g.fillText('성모 공주님 옷 입히기', 300, 990);
+        if (!cv.toBlob || !window.FileReader) { show(cv.toDataURL('image/png')); return; }
+        cv.toBlob(function (blob) {
+          if (!blob) { fail(); return; }
+          var fr = new FileReader();
+          fr.onload = function () { show(fr.result); };
+          fr.onerror = fail;
+          fr.readAsDataURL(blob);
+        }, 'image/png');
+      }).catch(fail);
+    };
+    bg.onerror = fail;
+    bg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(sceneBgSVG(W, H));
   }
   $('photoBtn').addEventListener('click', takePhoto);
 
