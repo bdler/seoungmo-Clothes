@@ -78,7 +78,7 @@
       z-index: 20;
     }
     #game.full #rack { pointer-events: none; }
-    #game.full #tabs, #game.full #princessPanel, #game.full .piece:not(.flying) { opacity: 0; pointer-events: none; }
+    #game.full #tabs, #game.full #princessPanel, #game.full .piece:not(.flying):not(.dragging) { opacity: 0; pointer-events: none; }
     #tabs, #princessPanel { transition: opacity .4s; }
     #game.full #dollWrap { left: 430px; }
     #tabs { position: absolute; left: 6px; top: 4px; right: 6px; display: flex; gap: 5px; justify-content: center; }
@@ -514,7 +514,10 @@
     fit.crop = { x: 0, y: 0, w: W, h: H, W: W, H: H };
     return new Promise(function (res) {
       cv.toBlob(function (blob) {
-        fit.url = URL.createObjectURL(blob);
+        // 그림 만들기에 실패하면(null) 다른 방법으로 한 번 더, 그래도 안 되면 이 공주님만 빼요 (멈추지 않게)
+        var u = blob ? URL.createObjectURL(blob) : cv.toDataURL('image/png');
+        if (u === 'data:,') { res(null); return; }
+        fit.url = u;
         res(fit);
       }, 'image/png');
     });
@@ -528,7 +531,7 @@
       return tryAt(0).then(function (img) {
         return prepareBody(img).then(function (b) {
           URL.revokeObjectURL(img.src); // 원본은 이제 필요 없어요
-          AI.bodies[p.id] = b;
+          if (b) AI.bodies[p.id] = b;
         });
       }).catch(function () {});
     };
@@ -564,8 +567,8 @@
         cc.getContext('2d').drawImage(cv, crop.x, crop.y, crop.w, crop.h, 0, 0, crop.w, crop.h);
         // 공주님 위에서 어느 옷을 집었는지 알아내는 반투명 지도 (2픽셀마다 하나)
         var mw = Math.ceil(crop.w / 2), mh = Math.ceil(crop.h / 2), mask = new Uint8Array(mw * mh);
-        for (var my = 0; my < mh; my++) for (var mx = 0; mx < mw; mx++) {
-          mask[my * mw + mx] = d[((crop.y + my * 2) * W + crop.x + mx * 2) * 4 + 3] > 40 ? 1 : 0;
+        for (var my = 0; my < crop.h; my++) for (var mx = 0; mx < crop.w; mx++) {
+          if (d[((crop.y + my) * W + crop.x + mx) * 4 + 3] > 40) mask[(my >> 1) * mw + (mx >> 1)] = 1;
         }
         crop.mask = mask; crop.mw = mw; crop.mh = mh;
         // 그림 좌표 → 공주님 좌표 (다리 아래쪽은 따로 늘린 값으로)
@@ -575,9 +578,9 @@
         c.box = { x: sx(x0) - pad, y: sy(y0) - pad, w: sx(x1 + 1) - sx(x0) + pad * 2, h: sy(y1 + 1) - sy(y0) + pad * 2 };
         return new Promise(function (res) {
           cc.toBlob(function (blob) {
-            crop.url = URL.createObjectURL(blob);
-            crop.canvas = cc;
-            c.img = crop;
+            // 그림 만들기에 실패하면(null) 다른 방법으로 한 번 더, 그래도 안 되면 이 옷만 빼요 (멈추지 않게)
+            var u = blob ? URL.createObjectURL(blob) : cc.toDataURL('image/png');
+            if (u !== 'data:,') { crop.url = u; crop.canvas = cc; c.img = crop; }
             res();
           }, 'image/png');
         });
@@ -640,6 +643,7 @@
     });
     return list;
   }
+  var THIN_SLOTS = { necklace: 1, bag: 1, hand: 1, ear: 1, glasses: 1 }; // 가늘거나 작은 장신구
   // 공주님 위의 한 점(공주님 좌표)에 보이는 옷 중 가장 위에 있는 옷을 찾아요
   function pickWorn(x, y) {
     var rose = AI.bodies.rose, list = wornList(state).reverse();
@@ -654,15 +658,21 @@
       }
       return false;
     };
-    var i;
-    for (i = 0; i < list.length; i++) if (hit(list[i], 0)) return list[i].id;
-    for (i = 0; i < list.length; i++) if (hit(list[i], 3)) return list[i].id; // 손가락은 조금 넉넉하게
-    var best = null; // 그래도 없으면 그 점을 감싸는 가장 작은 옷
-    list.forEach(function (it) {
-      var b = it.box;
-      if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h && (!best || b.w * b.h < best.box.w * best.box.h)) best = it;
-    });
-    return best && best.id;
+    // 마스크 한 칸이 화면에서 몇 px 인지 (작은 화면일수록 손가락 여유를 칸 수로 더 크게)
+    var cell = function (it) { return 2 * rose.w / it.img.W * K * 300 / 360; };
+    var i, it;
+    // 1) 위에 입은 것부터: 정확히 그 옷 위이거나, 가는 장신구는 화면에서 8px 안쪽이면 그 옷
+    for (i = 0; i < list.length; i++) {
+      it = list[i];
+      if (hit(it, 0)) return it.id;
+      if (THIN_SLOTS[it.slot] && hit(it, Math.max(3, Math.ceil(8 / cell(it))))) return it.id;
+    }
+    // 2) 손가락은 조금 넉넉하게 (화면에서 약 7px)
+    for (i = 0; i < list.length; i++) {
+      it = list[i];
+      if (hit(it, Math.min(8, Math.max(3, Math.round(7 / cell(it)))))) return it.id;
+    }
+    return null; // 옷이 없는 맨살·배경을 누르면 아무것도 집지 않아요
   }
 
   // =====================================================================
@@ -688,7 +698,8 @@
   var game = $('game'), dollSvg = $('doll'), dollWrap = $('dollWrap'), piecesEl = $('pieces');
   var K = 1, curPage = 'clothes';
 
-  function renderDoll() { dollSvg.innerHTML = dollMarkup(state, 'd', true); }
+  // 옷자락이 공주님 그림 칸 밖으로 나와도 누를 수 있게 투명한 판을 깔아요 (무엇을 잡을지는 pickWorn 이 정해요)
+  function renderDoll() { dollSvg.innerHTML = '<rect x="-36" width="432" height="900" fill="none" pointer-events="all"/>' + dollMarkup(state, 'd', true); }
 
   // =====================================================================
   //  옷장 배치
@@ -820,18 +831,19 @@
     return pt.x > x + 10 && pt.x < x + 290 && pt.y > y && pt.y < y + 760;
   }
   // 손가락/마우스 위치 → 공주님 그림 좌표 (360 x 900)
+  // getScreenCTM()은 Safari·아이패드에서 화면 확대/축소(K)를 빼먹어서, 화면에 보이는 상자로 계산해요
   function toDoll(e) {
-    var m = dollSvg.getScreenCTM();
-    if (!m) return null;
-    var pt = dollSvg.createSVGPoint();
-    pt.x = e.clientX; pt.y = e.clientY;
-    return pt.matrixTransform(m.inverse());
+    var r = dollSvg.getBoundingClientRect();
+    if (!r.width || !r.height) return null;
+    return { x: (e.clientX - r.left) / r.width * 360, y: (e.clientY - r.top) / r.height * 900 };
   }
   function startDrag(e, id, fromDoll) {
     if (e.button > 0) return; // 오른쪽·가운데 단추로는 끌지 않아요 (메뉴가 놓는 신호를 먹어서 멈출 수 있어요)
     if (drag) {
-      // 두 번째 손가락은 무시하고, 새로 누른 첫 손가락이면 이전 끌기는 (놓는 신호를 잃어버린 것이니) 취소해요
-      if (!e.isPrimary && e.pointerId !== drag.pointerId) return;
+      // 두 번째 손가락은 무시하고, 같은 종류(손가락·마우스·펜)로 새로 누른 첫 포인터면 이전 끌기는 (놓는 신호를 잃어버린 것이니) 취소해요.
+      // 다른 종류(펜을 쓰는 중 닿은 손바닥 등)는 끌던 포인터가 1초 넘게 조용했을 때만 취소해요.
+      if (e.pointerId !== drag.pointerId &&
+          (!e.isPrimary || (e.pointerType !== drag.pointerType && e.timeStamp - drag.t < 1000))) return;
       endDrag(null);
     }
     var el = PIECE[id], it = ITEM_BY_ID[id], h = HOME[id];
@@ -853,7 +865,7 @@
       offX = pt.x - (PIECES_X + (parseFloat(cs.left) || h.x)); offY = pt.y - (PIECES_Y + (parseFloat(cs.top) || h.y));
     }
     el.classList.add('dragging');
-    drag = { id: id, el: el, offX: offX, offY: offY, pointerId: e.pointerId, fromDoll: fromDoll, over: false };
+    drag = { id: id, el: el, offX: offX, offY: offY, pointerId: e.pointerId, pointerType: e.pointerType, t: e.timeStamp, fromDoll: fromDoll, over: false };
     // 이후 움직임은 모두 이 옷 조각으로 오게 해요 (iframe 안에서도 놓치지 않게)
     try { el.setPointerCapture(e.pointerId); } catch (err) {}
     window.addEventListener('pointermove', onMove);
@@ -869,7 +881,8 @@
   }
   function onMove(e) {
     if (!drag || e.pointerId !== drag.pointerId) return;
-    if (e.pointerType === 'mouse' && e.buttons === 0) { endDrag(null); return; } // 놓는 신호를 놓친 마우스
+    drag.t = e.timeStamp;
+    if (e.pointerType !== 'touch' && e.buttons === 0) { endDrag(null); return; } // 놓는 신호를 놓친 마우스·펜 (떠 있는 펜)
     moveTo(toStage(e));
   }
   function onUp(e) { if (drag && e.pointerId === drag.pointerId) endDrag(e); }
@@ -1032,7 +1045,12 @@
       $('photoModal').classList.add('open');
       photoBusy = false;
     };
-    var fontReady = document.fonts && document.fonts.load ? document.fonts.load('26px Jua').catch(function () {}) : Promise.resolve();
+    // 글꼴이 늦게 오면 1.5초만 기다리고 기본 글꼴로 찍어요 (사진이 안 나오는 일이 없도록)
+    var caption = '성모 공주님 옷 입히기';
+    var fontReady = Promise.race([
+      document.fonts && document.fonts.load ? document.fonts.load('26px Jua', caption).catch(function () {}) : null,
+      new Promise(function (r) { setTimeout(r, 1500); })
+    ]);
     bg.onload = function () {
       fontReady.then(function () {
         var cv = document.createElement('canvas');
@@ -1044,8 +1062,10 @@
         drawLayer(g, ai, ai.crop, ai.canvas);
         wornList(state).forEach(function (it) { drawLayer(g, AI.bodies.rose, it.img, it.img.canvas); });
         g.restore();
-        g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '26px Jua, sans-serif';
-        g.fillText('성모 공주님 옷 입히기', 300, 990);
+        g.fillStyle = '#fff'; g.textAlign = 'center';
+        // 글꼴이 일부만 왔으면 글자마다 섞이지 않게 한 가지 글꼴로
+        g.font = !document.fonts || !document.fonts.check || document.fonts.check('26px Jua', caption) ? '26px Jua, sans-serif' : '26px sans-serif';
+        g.fillText(caption, 300, 990);
         if (!cv.toBlob || !window.FileReader) { show(cv.toDataURL('image/png')); return; }
         cv.toBlob(function (blob) {
           if (!blob) { fail(); return; }
